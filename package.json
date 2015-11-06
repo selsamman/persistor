@@ -7,7 +7,15 @@
         "q": "1.x",
         "supertype": "0.1.x",
         "underscore": "1.x",
-        "mongodb": "1.x"
+        "mongodb": "1.x",
+        "knex": "*",
+        "pg":"*"
+    },
+    "devDependencies": {
+        "chai": "2.1.2",
+        "chai-as-promised": "^5.1.0",
+        "sinon": "1.15.x",
+        "sinon-chai": "2.8.x"
     },
     "directories": {
     },

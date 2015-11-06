@@ -263,7 +263,7 @@ function clearCollection(template) {
 
 }
 
-describe("Banking Example", function () {
+describe("Banking from pgsql Example", function () {
 
     it ("opens the database Postgres", function (done) {
         console.log("starting banking");
@@ -273,9 +273,13 @@ describe("Banking Example", function () {
                     client: 'pg',
                     connection: {
                         host     : '127.0.0.1',
+                        port:5433,
                         database : 'persistor_banking',
-                        user: 'nodejs'
-                    }});
+                        user: 'postgres',
+                        password: 'postgres'
+                    }
+                });
+
                 PersistObjectTemplate.setDB(knex, PersistObjectTemplate.DB_PG, 'pg');
                 done();
         }).fail(function(e){done(e)});;
