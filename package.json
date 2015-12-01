@@ -2,7 +2,7 @@
     "name": "persistor",
     "description": "A subclass of supertype that serializes to and reconstitutes from mongodb",
     "homepage": "https://github.com/selsamman/persistor",
-    "version": "0.2.00",
+    "version": "0.2.05",
     "dependencies": {
         "q": "1.x",
         "supertype": "0.1.x",
@@ -15,7 +15,12 @@
         "chai": "2.1.2",
         "chai-as-promised": "^5.1.0",
         "sinon": "1.15.x",
-        "sinon-chai": "2.8.x"
+        "sinon-chai": "2.8.x",
+        "bluebird": "x",
+        "mongodb": "1.x",
+        "chai": "3.x",
+        "pg": "x",
+        "knex": "x"
     },
     "directories": {
     },
