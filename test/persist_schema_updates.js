@@ -341,7 +341,7 @@ describe('index synchronization checks', function () {
 
 
         it('identify schema changes and update the schema version table', function () {
-            return PersistObjectTemplate.saveSchema('pg').should.eventually.have.property("INSERT");
+            return PersistObjectTemplate.saveSchema('pg').should.eventually.have.property("command");
         });
 
 
