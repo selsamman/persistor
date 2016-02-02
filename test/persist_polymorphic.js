@@ -568,16 +568,16 @@ describe('type mapping tests for parent/child relations', function () {
             })();
         })();
 
-        return Q.all([PersistObjectTemplate.dropKnexTable(Parent),
-            PersistObjectTemplate.dropKnexTable(Parent_Idx),
-            PersistObjectTemplate.dropKnexTable(ChildCreatesThisParent),
-            PersistObjectTemplate.dropKnexTable(ChildCreatesThisParent1),
-            PersistObjectTemplate.dropKnexTable(ParentMulteLevel1),
-            PersistObjectTemplate.dropKnexTable(ParentMulteLevelIndx1),
-            PersistObjectTemplate.dropKnexTable(ParentWithMultiChildAttheSameLevel),
-            PersistObjectTemplate.dropKnexTable(Scenario_2_ParentWithMultiChildAttheSameLevel),
-            PersistObjectTemplate.dropKnexTable(ParentWithMultiChildAttheSameLevelWithIndexes),
-            PersistObjectTemplate.dropKnexTable(parentSynchronize)
+        return Q.all([PersistObjectTemplate.dropTableIfExists(Parent),
+            PersistObjectTemplate.dropTableIfExists(Parent_Idx),
+            PersistObjectTemplate.dropTableIfExists(ChildCreatesThisParent),
+            PersistObjectTemplate.dropTableIfExists(ChildCreatesThisParent1),
+            PersistObjectTemplate.dropTableIfExists(ParentMulteLevel1),
+            PersistObjectTemplate.dropTableIfExists(ParentMulteLevelIndx1),
+            PersistObjectTemplate.dropTableIfExists(ParentWithMultiChildAttheSameLevel),
+            PersistObjectTemplate.dropTableIfExists(Scenario_2_ParentWithMultiChildAttheSameLevel),
+            PersistObjectTemplate.dropTableIfExists(ParentWithMultiChildAttheSameLevelWithIndexes),
+            PersistObjectTemplate.dropTableIfExists(parentSynchronize)
         ]).should.notify(done);;
     })
 
