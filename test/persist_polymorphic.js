@@ -568,16 +568,16 @@ describe('type mapping tests for parent/child relations', function () {
             })();
         })();
 
-        return Q.all([PersistObjectTemplate.dropKnexTable(Parent).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(Parent_Idx).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(ChildCreatesThisParent).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(ChildCreatesThisParent1).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(ParentMulteLevel1).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(ParentMulteLevelIndx1).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(ParentWithMultiChildAttheSameLevel).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(Scenario_2_ParentWithMultiChildAttheSameLevel).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(ParentWithMultiChildAttheSameLevelWithIndexes).should.eventually.have.property("command", "DROP"),
-            PersistObjectTemplate.dropKnexTable(parentSynchronize).should.eventually.have.property("command", "DROP")
+        return Q.all([PersistObjectTemplate.dropTableIfExists(Parent),
+            PersistObjectTemplate.dropTableIfExists(Parent_Idx),
+            PersistObjectTemplate.dropTableIfExists(ChildCreatesThisParent),
+            PersistObjectTemplate.dropTableIfExists(ChildCreatesThisParent1),
+            PersistObjectTemplate.dropTableIfExists(ParentMulteLevel1),
+            PersistObjectTemplate.dropTableIfExists(ParentMulteLevelIndx1),
+            PersistObjectTemplate.dropTableIfExists(ParentWithMultiChildAttheSameLevel),
+            PersistObjectTemplate.dropTableIfExists(Scenario_2_ParentWithMultiChildAttheSameLevel),
+            PersistObjectTemplate.dropTableIfExists(ParentWithMultiChildAttheSameLevelWithIndexes),
+            PersistObjectTemplate.dropTableIfExists(parentSynchronize)
         ]).should.notify(done);;
     })
 
