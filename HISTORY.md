@@ -1,3 +1,10 @@
+## 1.0.0-beta-5
+* Fixed issue converting types on filtered consolidation
+## 1.0.0-beta.4
+* Added consolidation of children that are in same table with different filter criteria
+## 1.0.0-beta.3
+* Added serialization of reads to avoid overruning pool
+* Added consolidation of duplicate queries
 ## 1.0.0-beta.1
 * moving to symver style of number for next round of changes
 ## 0.2.86
