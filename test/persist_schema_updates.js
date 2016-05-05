@@ -105,7 +105,7 @@ var Q = require('Q');
 var db;
 var schema = {
     Employee: {
-        documentOf: "pg/Employee"
+        documentOf: "pg/employee"
     },
     Manager: {
         documentOf: "pg/Manager",
@@ -282,7 +282,7 @@ describe('index synchronization checks', function () {
 
 
             return Q.all(
-                [   knex.schema.dropTableIfExists('Employee'),
+                [   knex.schema.dropTableIfExists('employee'),
                     knex.schema.dropTableIfExists('BoolTable'),
                     knex.schema.dropTableIfExists('ChangeFieldTypeTable'),
                     knex.schema.dropTableIfExists('DateTable'),

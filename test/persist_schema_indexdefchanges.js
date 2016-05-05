@@ -111,7 +111,7 @@ var Q = require('Q');
 var db;
 var schema = {
     Employee: {
-        documentOf: "pg/Employee",
+        documentOf: "pg/employee",
         indexes: [{
             name: "fst_index",
             def: {
@@ -160,7 +160,7 @@ var schema = {
         documentOf: "pg/ChangeFieldTypeTable"
     },
     SingleIndexTable: {
-        documentOf: "pg/SingleIndexTable",
+        documentOf: "pg/singleIndexTable",
         indexes: [{
             name: "single_index",
             def: {
@@ -255,7 +255,7 @@ describe('index synchronization checks', function () {
         return Q.all([
             knex.schema.dropTableIfExists('notificationCheck'),
             PersistObjectTemplate.dropKnexTable(Employee),
-            PersistObjectTemplate.dropKnexTable(Manager),
+           // PersistObjectTemplate.dropKnexTable(Manager),
             PersistObjectTemplate.dropKnexTable(BoolTable),
             PersistObjectTemplate.dropKnexTable(DateTable),
             PersistObjectTemplate.dropKnexTable(SingleIndexTable),
@@ -276,21 +276,21 @@ describe('index synchronization checks', function () {
             return checkKeyExistsInSchema('ExtendParent').should.eventually.equal(false);
         })
     });
-
+    
     it('synchronize the index definition and check if the index exists on the table by dropping the index', function () {
         return  PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).should.eventually.have.property('command').that.match(/INSERT/);
     });
-
+    
     it('calling synchronizeKnexTableFromTemplate without any changes to the schema definitions..', function () {
         return  PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).should.eventually.be.fulfilled;
     })
-
+    
     it('synchronize the index definition for a new table and leave it in the schema table..', function () {
         return  PersistObjectTemplate.synchronizeKnexTableFromTemplate(MultipleIndexTable).then(function(){
             return checkKeyExistsInSchema('MultipleIndexTable').should.eventually.equal(true);
         })
     });
-
+    
     it('remove the existing index definition, system should delete the index', function () {
         return PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).then(function (result) {
             schema.IndexSyncTable.indexes = [];
@@ -299,7 +299,7 @@ describe('index synchronization checks', function () {
             })
         });
     });
-
+    
     it('adding an index should upddate the table again..', function () {
         schema.IndexSyncTable.indexes = [
             {
@@ -310,13 +310,13 @@ describe('index synchronization checks', function () {
                 }
             }
         ];
-
+    
         return PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).then(function (result) {
             return getIndexes('IndexSyncTable').should.eventually.have.length(1);
         });
     });
-
-
+    
+    
     it('adding an index should upddate the table again..', function () {
         schema.IndexSyncTable.indexes = [
             {
@@ -334,18 +334,18 @@ describe('index synchronization checks', function () {
                 }
             }
         ];
-
+    
         return PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).then(function (result) {
             return getIndexes('IndexSyncTable').should.eventually.have.length(2);
         });
     });
-
+    
     it('adding a new field and verifying the notification', function () {
         function fieldsNotify(fields){
             console.log(fields);
         };
-
-
+    
+    
         schema.notificationCheck = {};
         schema.notificationCheck.documentOf = "pg/notificationCheck";
         var notificationCheck = PersistObjectTemplate.create("notificationCheck", {
@@ -367,10 +367,10 @@ describe('index synchronization checks', function () {
                     this.name = name;
                 }
             });
-
+    
             PersistObjectTemplate._verifySchema();
             return PersistObjectTemplate.synchronizeKnexTableFromTemplate(notificationCheck, fieldsNotify).then(function () {
-
+    
             });
         });
     });
