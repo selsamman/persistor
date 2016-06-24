@@ -1,3 +1,5 @@
+## 1.1.2
+* Fixed problem where orphans would be pruned when collection was not fetched
 ## 1.1.1
 ## 1.1.0
 * Changed version tracking pattern
