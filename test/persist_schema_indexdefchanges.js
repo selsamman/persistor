@@ -369,25 +369,4 @@ describe('index synchronization checks', function () {
    
         });
     });
-
-    it('Using the same field with different case should throw an exception', function () {
-        schema.caseChangeCheck = {};
-        schema.caseChangeCheck.documentOf = "pg/caseChangeCheck";
-        var caseChangeCheck = PersistObjectTemplate.create("caseChangeCheck", {
-            id: {type: String},
-            name: {type: String, value: "PrimaryIndex"},
-            fieldToChange: {type: String},
-            init: function (id, name) {
-                this.id = id;
-                this.name = name;
-            }
-        });
-        PersistObjectTemplate._verifySchema();
-        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(caseChangeCheck).then(function (result) {
-            caseChangeCheck.mixin({FIELDTOCHANGE: {type: String}});
-
-            PersistObjectTemplate._verifySchema();
-            return PersistObjectTemplate.synchronizeKnexTableFromTemplate(caseChangeCheck).should.be.rejectedWith(Error, 'with a different case')
-        });
-    });
 });
