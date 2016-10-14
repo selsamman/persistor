@@ -1,3 +1,5 @@
+## 1.4.0
+* Changes to be compatible with templateMode: auto
 ## 1.3.4
 * Fixed column change notification
 ## 1.3.2
