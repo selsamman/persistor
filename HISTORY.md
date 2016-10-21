@@ -1,3 +1,5 @@
+## 1.4.1
+* Don't crap if foreign key deleted
 ## 1.4.0
 * Changes to be compatible with templateMode: auto
 ## 1.3.4
