@@ -1,3 +1,5 @@
+## 1.4.3
+* Create table comments in Postgres on new tables as well as modifications
 ## 1.4.2
 * Don't crap if foreign key deleted
 ## 1.4.0
