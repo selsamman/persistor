@@ -21,9 +21,7 @@
         "sinon-chai": "2.8.x"
     },
     "scripts": {
-        "test": "istanbul cover _mocha -- test/* -R spec",
-        "test:config": "mocha test/config",
-        "test:example": "mocha test/example"
+        "test": "istanbul cover _mocha -- test/* -R spec"
     },
     "directories": {
     },
