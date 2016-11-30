@@ -448,6 +448,14 @@ describe("Banking Example", function () {
             done(e)
         });
     });
+    it("fetchProperty call for code coverage, these values are already available in the object", function () {
+        Account.getFromPersistWithId(samsAccount._id).then (function (account) {
+            account.fetchProperty('roles');
+        }).catch(function(e){
+            throw e;
+        });
+    });
+    
     it("has a correct joint account balance for the joint account", function (done) {
         Account.getFromPersistWithId(jointAccount._id, {roles: true}).then (function (account) {
             expect(account.getBalance()).to.equal(jointAccount.getBalance());
@@ -466,15 +474,52 @@ describe("Banking Example", function () {
     });
     it("Can change things to null", function (done) {
         Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true}).then (function (customer) {
-           customer.firstName = null;
-           customer.referredBy = null;
-           return customer.persistSave()
+            customer.firstName = null;
+            customer.referredBy = null;
+            customer.isStale();
+            return customer.persistSave();
         }).then (function () {
            return Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true})
         }).then (function (customer) {
            expect(customer.firstName).to.equal(null);
            expect(customer.referredBy).to.equal(null);
            done();
+        }.bind(this)).catch(function(e) {
+            done(e)
+        })
+    });
+
+    it("Reset data with transaction object", function (done) {
+        Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true}).then (function (customer) {
+            customer.firstName = 'Sam';
+            customer.referredBy = null;
+            var txn = PersistObjectTemplate.begin();
+
+            return customer.persistSave(txn);
+
+        }).then (function () {
+            return Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true})
+        }).then (function (customer) {
+            expect(customer.firstName).to.equal('Sam');
+            expect(customer.referredBy).to.equal(null);
+            done();
+        }.bind(this)).catch(function(e) {
+            done(e)
+        })
+    });
+
+    it("Check PersistTouch call for Mongo", function (done) {
+        Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true}).then (function (customer) {
+            customer.firstName = null;
+            customer.referredBy = null;
+            return customer.persistTouch();
+
+        }).then (function () {
+            return Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true})
+        }).then (function (customer) {
+            expect(customer.firstName).to.equal(null);
+            expect(customer.referredBy).to.equal(null);
+            done();
         }.bind(this)).catch(function(e) {
             done(e)
         })
