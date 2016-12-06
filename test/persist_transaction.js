@@ -47,15 +47,13 @@ describe('persistor transaction checks', function () {
             knex.schema.dropTableIfExists('tx_employee2').then(function(){
                 return knex.schema.dropTableIfExists('tx_address2');
             }),
-            knex(schemaTable).del(),
-            createFKProcedure()
+            knex.schema.dropTableIfExists('tx_delete_employee').then(function(){
+                return knex.schema.dropTableIfExists('tx_delete_address');
+            }),
+            knex(schemaTable).del()
         ]).should.notify(done);
 
-        function createFKProcedure(){
-            var content = fs.readFileSync('test/f_create_ref_integrity.sql', "utf-8");
-            return knex.schema.raw(content);
-        }
-    });
+     });
 
     it("create a simple table", function () {
         schema.Employee = {};
@@ -64,7 +62,7 @@ describe('persistor transaction checks', function () {
         schema.Address.documentOf = "tx_address";
 
         schema.Employee.parents = {
-            homeAddress: {id: "department_id"}
+            homeAddress: {id: "address_id"}
         }
 
         var Address = PersistObjectTemplate.create("Address", {
@@ -99,7 +97,7 @@ describe('persistor transaction checks', function () {
         }
 
         function createFKs(){
-            return knex.raw('select f_create_ref_integrity(\'foreign key for\')' );
+            return knex.raw('ALTER TABLE public.tx_employee ADD CONSTRAINT fk_tx_employee_address2 FOREIGN KEY (address_id) references public.tx_address("_id")' );
         }
 
         function syncTable(template){
@@ -135,7 +133,7 @@ describe('persistor transaction checks', function () {
         schema.Address1.documentOf = "tx_address1";
 
         schema.Employee1.parents = {
-            homeAddress: {id: "department_id"}
+            homeAddress: {id: "address_id"}
         }
 
         var Address1 = PersistObjectTemplate.create("Address1", {
@@ -166,7 +164,7 @@ describe('persistor transaction checks', function () {
         }
 
         function createFKs(){
-            return knex.raw('select f_create_ref_integrity(\'foreign key for\')' );
+            return knex.raw('ALTER TABLE public.tx_employee1 ADD CONSTRAINT fk_tx_employee1_address2 FOREIGN KEY (address_id) references public.tx_address1("_id") deferrable initially deferred' );
         }
 
         function syncTable(template){
@@ -187,9 +185,12 @@ describe('persistor transaction checks', function () {
             add.state = 'New York';
             emp.name = 'Ravi';
             emp.homeAddress = add;
+            emp.setDirty(tx);
+            add.setDirty(tx);
 
-            emp.setDirty();
-            add.setDirty();
+            tx.postSave = function (tx) {
+                console.log('post save..');
+            };
 
             return PersistObjectTemplate.saveAll(tx);
         }
@@ -202,7 +203,7 @@ describe('persistor transaction checks', function () {
         schema.Address2.documentOf = "tx_address2";
 
         schema.Employee2.parents = {
-            homeAddress: {id: "department_id"}
+            homeAddress: {id: "address_id"}
         }
 
         var Address2 = PersistObjectTemplate.create("Address2", {
@@ -233,7 +234,7 @@ describe('persistor transaction checks', function () {
         }
 
         function createFKs(){
-            return knex.raw('select f_create_ref_integrity(\'foreign key for\')' );
+            return knex.raw('ALTER TABLE public.tx_employee2 ADD CONSTRAINT fk_tx_employee2_address2 FOREIGN KEY (address_id) references public.tx_address2("_id") deferrable initially deferred' );
         }
 
         function syncTable(template){
@@ -253,12 +254,83 @@ describe('persistor transaction checks', function () {
             add.state = 'New York';
             emp.name = 'Ravi';
             emp.homeAddress = add;
-            add.setDirty();
-            emp.setDirty();
-
-
+            emp.setDirty(tx);
+            add.setDirty(tx);
             return PersistObjectTemplate.end(tx);
         }
     });
 
+    it("checking delete scenario", function () {
+        schema.EmployeeDel = {};
+        schema.AddressDel = {};
+        schema.EmployeeDel.documentOf = "tx_delete_employee";
+        schema.AddressDel.documentOf = "tx_delete_address";
+
+        schema.EmployeeDel.parents = {
+            homeAddress: {id: "address_id"}
+        }
+
+        var AddressDel = PersistObjectTemplate.create("AddressDel", {
+            city: {type: String},
+            state: {type: String}
+        });
+
+        var EmployeeDel = PersistObjectTemplate.create("EmployeeDel", {
+            name: {type: String, value: "Test Del Employee"},
+            homeAddress: {type: AddressDel}
+        });
+
+        var emp = new EmployeeDel();
+        var add = new AddressDel();
+        add.city = 'New York';
+        add.state = 'New York';
+        emp.name = 'Kumar';
+        emp.homeAddress = add;
+
+        PersistObjectTemplate.performInjections();
+        PersistObjectTemplate._verifySchema();
+
+        return syncTable(EmployeeDel)
+            .then(syncTable.bind(this, AddressDel))
+            .then(createFKs.bind(this))
+            .then(openTransaction.bind(this))
+            .then(endTransaction.bind(this))
+            .then(deleteCheck.bind(this))
+
+
+
+
+        function createFKs(){
+            return knex.raw('ALTER TABLE public.tx_delete_employee ADD CONSTRAINT fk_tx_delete_employee_address2 FOREIGN KEY (address_id) references public.tx_delete_address("_id") deferrable initially deferred' );
+        }
+
+        function syncTable(template){
+            return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template);
+        }
+
+        function openTransaction() {
+            tx =  PersistObjectTemplate.begin();
+            return tx;
+        }
+
+        function insertToChild(tx){
+            return emp.persistSave(tx).then(function(){
+                return tx;
+            });
+        }
+        function insertToParent(txn){
+            return add.persistSave(txn).then(function(){
+                return txn;
+            });
+        }
+        function endTransaction(txn){
+            emp.setDirty(tx);
+            add.setDirty(tx);
+            return PersistObjectTemplate.end(tx);
+        }
+        function deleteCheck(txn) {
+            //return EmployeeDel.deleteFromPersistWithQuery({name: {$eq: 'Kumar'}});
+            return EmployeeDel.deleteFromPersistWithQuery({name: 'Kumar'});
+        }
+    });
 });

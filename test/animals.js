@@ -1,6 +1,7 @@
 var expect = require('chai').expect;
 var Q = require("q");
 var ObjectTemplate = require('supertype');
+var PersistObjectTemplate = require('../index.js')(ObjectTemplate, null, ObjectTemplate);
 
 /* Teacher Student Example */
 
@@ -95,6 +96,25 @@ describe("Freeze Dried Arks", function () {
 
 		done();
 	});
+
+	it ("check the callback", function() {
+		var response = PersistObjectTemplate.createTransientObject(function(){
+			return 'checkdata';
+		})
+		expect(response).to.equal('checkdata');
+	})
+
+	it ("if the current transient state is false, createTransientObject should retain the false state", function() {
+		PersistObjectTemplate.__transient__ = false;
+		PersistObjectTemplate.createTransientObject();
+		expect(PersistObjectTemplate.__transient__).to.equal(false);
+	})
+
+	it ("if the current transient state is true, createTransientObject should retain the true state", function() {
+		PersistObjectTemplate.__transient__ = true;
+		PersistObjectTemplate.createTransientObject();
+		expect(PersistObjectTemplate.__transient__).to.equal(true);
+	})
 
 });
 

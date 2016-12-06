@@ -306,6 +306,10 @@ describe("Banking Example", function () {
     jointAccount.transferFrom(50, samsAccount);     // Joint has 150, Sam has 100
     jointAccount.debit(25);                         // Joint has 125
 
+    it('calling getTemplateFromMongoPOJO without idmap should raise an error', function() {
+        expect(PersistObjectTemplate.getTemplateFromMongoPOJO.bind(this)).to.throw(/missing idMap on getTemplateFromMongoPOJO/);
+    });
+
     it("both accounts have the right balance", function () {
         expect(samsAccount.getBalance()).to.equal(100);
         expect(jointAccount.getBalance()).to.equal(125);
@@ -455,6 +459,29 @@ describe("Banking Example", function () {
             throw e;
         });
     });
+
+    it("distinctFromMongoQuery coverage", function () {
+        PersistObjectTemplate.distinctFromMongoQuery(Customer, 'firstName', {_id: PersistObjectTemplate.ObjectID(sam._id.toString())}).then (function (customers) {
+            expect(customers.length).to.greaterThan(0);
+        }).catch(function(e){
+            throw e;
+        });
+    });
+
+    it("getPOJOFromMongoId coverage", function () {
+        PersistObjectTemplate.getPOJOFromMongoId(Customer, sam._id).then (function (customer) {
+            expect(customer.firstName).to.equal("Sam");
+        }).catch(function(e){
+            throw e;
+        });
+    });
+    it("getPOJOFromMongoId should return null", function () {
+        PersistObjectTemplate.getPOJOFromMongoId(Customer, '5841ea4e0579b824807ab48b').then (function (customer) {
+            expect(customer).to.equal(null);
+        }).catch(function(e){
+            throw e;
+        });
+    });
     
     it("has a correct joint account balance for the joint account", function (done) {
         Account.getFromPersistWithId(jointAccount._id, {roles: true}).then (function (account) {
@@ -494,9 +521,7 @@ describe("Banking Example", function () {
             customer.firstName = 'Sam';
             customer.referredBy = null;
             var txn = PersistObjectTemplate.begin();
-
             return customer.persistSave(txn);
-
         }).then (function () {
             return Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true})
         }).then (function (customer) {
@@ -513,7 +538,6 @@ describe("Banking Example", function () {
             customer.firstName = null;
             customer.referredBy = null;
             return customer.persistTouch();
-
         }).then (function () {
             return Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true})
         }).then (function (customer) {
@@ -524,17 +548,29 @@ describe("Banking Example", function () {
             done(e)
         })
     });
-/*
-    it ("can serialize and deserialize", function(done) {
-        Customer.getFromPersistWithId(customer_id, {roles: {account: true}}).then (function (customer) {
-            var str = customer.toJSONString();
-            var customer2 = Customer.fromJSON(str);
-            return verifyCustomer(customer2).then(function () {;
-                done();
+
+
+    it("can delete using mongo query", function () {
+        writing = true;
+        var testDelete = new Customer("Ashling", "", "testDelete");
+        return testDelete.persistSave()
+            .then(Customer.countFromPersistWithQuery.bind(this))
+            .then(function(count) {
+                expect(count).to.equal(4);
+            }).then(function() {
+                return Customer.deleteFromPersistWithQuery({lastName: {$eq: 'testDelete'}})
+            }).then(function(){
+                return Customer.countFromPersistWithQuery();
+            }).then(function(count){
+                expect(count).to.equal(3);
             });
-        }).catch(function(e){done(e)});
     });
-*/
+
+    it("saved callback test without passing trasaction object", function () {
+        writing = true;
+        var testDelete = new Customer("Without", "", "Transaction");
+        return PersistObjectTemplate.saved(testDelete);
+    });
 
     it("can delete", function (done) {
         Customer.getFromPersistWithId(sam._id,
@@ -549,7 +585,8 @@ describe("Banking Example", function () {
                 promises.push(account.persistDelete())
                 promises.push(customer.roles[0].persistDelete());
             }
-            promises.push(customer.persistDelete());
+
+            promises.push(Customer.deleteFromPersistWithQuery({lastName: {$eq: 'Elsamman'}}));
             return Q.allSettled(promises).then (function () {
                 return Customer.countFromPersistWithQuery()
             }).then (function (count) {

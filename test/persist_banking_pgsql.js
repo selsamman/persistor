@@ -5,6 +5,7 @@
  */
 
 var expect = require('chai').expect;
+var util = require('util');
 var Q = require("q");
 var _ = require("underscore");
 var ObjectTemplate = require('supertype');
@@ -154,9 +155,21 @@ var Account = PersistObjectTemplate.create("Account", {
         return balance;
     }
 });
+
+
 Address.mixin({
     account:  {type: Account}
 });
+var FirstLevel = PersistObjectTemplate.create('FirstLevel', {
+    dummy: {type: String, value: 'dummy'},
+    address: {type: Array, of: Address}
+});
+var CascadeSaveCheck = PersistObjectTemplate.create('CascadeSaveCheck', {
+    name: {type: String, value: 'initial value'},
+    firstLevel: {type: FirstLevel},
+    arrayOfFirstLevel: {type: Array, of: FirstLevel}
+});
+
 var Transaction = PersistObjectTemplate.create("Transaction", {
     init:       function (account, type, amount) {
         this.account = account;
@@ -266,6 +279,20 @@ var schema = {
     },
     Credit: {
         documentOf: "pg/transaction"
+    },
+    CascadeSaveCheck: {
+        documentOf: "pg/cascadeSaveCheck",
+        cascadeSave: true,
+        parents: {
+            firstLevel: {id: 'firstlevel_id'}
+        }
+    },
+    FirstLevel: {
+        documentOf: "pg/FirstLevel",
+        parents: {
+            firstLevel: {id: 'firstlevel_id'},
+            address: {id: 'address_id'}
+        }
     }
 }
 
@@ -346,7 +373,15 @@ describe("Banking from pgsql Example", function () {
                 return clearCollection(Address)
             }).then(function (count) {
                 expect(count).to.equal(0);
-            }).catch(function(e){throw e});
+                return clearCollection(CascadeSaveCheck)
+            }).then(function (count) {
+                expect(count).to.equal(0);
+                return clearCollection(FirstLevel)
+            }).then(function (count) {
+                expect(count).to.equal(0);
+            }).catch(function (e) {
+                throw e
+            });
     });
     var sam;
     var karen;
@@ -354,6 +389,17 @@ describe("Banking from pgsql Example", function () {
     var samsAccount;
     var jointAccount;
 
+    it ("setDirty with cascadeSave in the schema definition", function () {
+        var cascadeObj = new CascadeSaveCheck();
+        cascadeObj.firstLevel = new FirstLevel();
+    
+        var txn = PersistObjectTemplate.begin();
+        cascadeObj.setDirty(txn, true, true);
+
+        return PersistObjectTemplate.end(txn).then(function(id) {
+            console.log("Inserted");
+        });
+    });
 
     it ("can create the data", function () {
         // Setup customers and addresses
@@ -402,14 +448,22 @@ describe("Banking from pgsql Example", function () {
         expect(jointAccount.getBalance()).to.equal(125);
     });
 
+    it("check server side fetch property..", function () {
+        return samsAccount.addressFetch(0, 1).then(function(address) {
+            expect(util.inspect(address)).to.not.equal('');
+        })
+    });
+
     it("can insert", function (done) {
         console.log("Can Insert");
         PersistObjectTemplate.begin();
         sam.setDirty();
         ashling.setDirty();
         karen.setDirty();
+
+
         PersistObjectTemplate.end().then(function(id) {
-            writing = false;
+         //   writing = false;
             console.log("Inserted");
             done();
         }).catch(function(e){done(e)});
@@ -427,6 +481,15 @@ describe("Banking from pgsql Example", function () {
             done(e)
         })
     });
+
+    it("Dummy fetchProperty call, object already contains the values", function () {
+        Account.getFromPersistWithQuery(null,{address: true}).then (function (accounts) {
+            accounts[0].fetchProperty('roles', null, {sort: {_id: 1}});
+        }).catch(function(e) {
+            throw e;
+        })
+    });
+
     it("Customers have addresses", function (done) {
         Customer.getFromPersistWithQuery(null, {primaryAddresses: true, secondaryAddresses: true}).then (function (customers) {
             expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
@@ -581,11 +644,18 @@ describe("Banking from pgsql Example", function () {
         }).catch(function(e) {
             done(e)
         })
-    });    it("can fetch a pojo", function () {
+    });
+    it("can fetch a pojo", function () {
         return PersistObjectTemplate.getPOJOFromQuery(Customer, {firstName: "Sam"}).then(function (pojo) {
             expect(pojo[0].firstName).to.equal("Sam");
         });
     });
+
+    it("check persist properties", function () {
+        var persistorProps = PersistObjectTemplate.getPersistorProps();
+        expect(Object.keys(persistorProps)).to.contains('Customer')
+    });
+
     it ("can go native parent join", function (done) {
         Transaction
             .getKnex()
@@ -810,6 +880,8 @@ describe("Banking from pgsql Example", function () {
             customer.secondaryAddresses[0].city="Rhinebeck";
             customer.primaryAddresses[0].city="The Big Apple";
             var txn = PersistObjectTemplate.begin();
+           
+
             customer.secondaryAddresses[0].setDirty(txn);
             customer.primaryAddresses[0].setDirty(txn);
 
@@ -827,32 +899,6 @@ describe("Banking from pgsql Example", function () {
             expect(this.dirtyCount).to.equal(2);
         }).catch(function(e) {
             throw e;
-        });
-    });
-    it("Can get update conflicts on txn end and rollback", function (done) {
-        var customer;
-        var txn;
-        Customer.getFromPersistWithId(sam._id).then (function (c) {
-            customer = c;
-            expect(customer.secondaryAddresses[0].city).to.equal("Rhinebeck");
-            expect(customer.primaryAddresses[0].city).to.equal("The Big Apple");
-            customer.secondaryAddresses[0].city="Red Hook";
-            customer.primaryAddresses[0].city="New York";
-            txn = PersistObjectTemplate.begin();
-            customer.secondaryAddresses[0].setDirty(txn);
-            customer.primaryAddresses[0].setDirty(txn);
-            return knex('address').where({'_id': customer.secondaryAddresses[0]._id}).update({'__version__': 999});
-        }).then(function () {
-            return PersistObjectTemplate.end(txn);
-        }).catch(function (e) {
-            expect(e.message).to.equal("Update Conflict");
-            return Customer.getFromPersistWithId(sam._id);
-        }).then(function(customer) {
-            expect(customer.secondaryAddresses[0].city).to.equal("Rhinebeck");
-            expect(customer.primaryAddresses[0].city).to.equal("The Big Apple");
-            done();
-        }).catch(function(e) {
-            done(e)
         });
     });
 
@@ -1033,6 +1079,33 @@ describe("Banking from pgsql Example", function () {
             done(e)
         })
     });
+    it("cascadeSave with transaction", function () {
+        writing = true;
+        var txn = PersistObjectTemplate.begin();
+        var customerForCascadeSave = new Customer('customerForCascadeSave', 'M', 'Last');
+        customerForCascadeSave.cascadeSave(txn);
+        return PersistObjectTemplate.end(txn).then (function () {
+            return Customer.getFromPersistWithId(customerForCascadeSave._id)
+        }).then (function (customer) {
+            expect(customer.firstName).to.equal('customerForCascadeSave');
+        }.bind(this)).catch(function(e) {
+            throw e;
+        })
+    });
+    it("cascadeSave without transaction", function () {
+        writing = true;
+        var txn = PersistObjectTemplate.begin();
+        var customerForCascadeSave = new Customer('customerForCascadeSaveWithoutTransaction', 'M', 'Last');
+        customerForCascadeSave.cascadeSave();
+        return PersistObjectTemplate.end().then (function () {
+            return Customer.getFromPersistWithId(customerForCascadeSave._id)
+        }).then (function (customer) {
+            expect(customer.firstName).to.equal('customerForCascadeSaveWithoutTransaction');
+        }.bind(this)).catch(function(e) {
+            throw e;
+        })
+    });
+
     it("Can prune orphans", function (done) {
         Customer.getFromPersistWithId(sam._id).then (function (customer) {
             customer.secondaryAddresses = [];
