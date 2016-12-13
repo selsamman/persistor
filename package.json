@@ -21,7 +21,7 @@
         "sinon": "1.15.x",
         "sinon-chai": "2.8.x",
         "mock-fs": "3.6.x",
-        "eslint": "3.7.x",
+        "eslint": "3.7.x"
     },
     "directories": {
     },
