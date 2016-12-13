@@ -654,7 +654,7 @@ describe("Banking Example", function () {
 
     it("can delete using mongo query", function () {
         writing = true;
-        var testDelete = new Customer("Ashling", "", "testDelete");
+        var testDelete = new Customer('Ashling', '', 'testDelete');
         return testDelete.persistSave()
             .then(Customer.countFromPersistWithQuery.bind(this))
             .then(function(count) {
