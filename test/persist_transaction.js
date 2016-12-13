@@ -1,16 +1,12 @@
-var chai = require("chai"),
-    expect = require('chai').expect,
-    fs = require('fs');
+var chai = require('chai'),
+    expect = require('chai').expect;
 
-var chaiAsPromised = require("chai-as-promised");
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
+var chaiAsPromised = require('chai-as-promised');
 
 chai.should();
 chai.use(chaiAsPromised);
 
-var Q = require("q");
-var _ = require("underscore");
+var Q = require('q');
 var ObjectTemplate = require('supertype');
 var PersistObjectTemplate = require('../index.js')(ObjectTemplate, null, ObjectTemplate);
 
@@ -37,113 +33,105 @@ describe('persistor transaction checks', function () {
 
         })();
         return Q.all([
-            knex.schema.dropTableIfExists('tx_employee').then(function(){
+            knex.schema.dropTableIfExists('tx_employee').then(function() {
                 return knex.schema.dropTableIfExists('tx_address');
             }),
 
-            knex.schema.dropTableIfExists('tx_employee1').then(function(){
+            knex.schema.dropTableIfExists('tx_employee1').then(function() {
                 return knex.schema.dropTableIfExists('tx_address1');
             }),
-            knex.schema.dropTableIfExists('tx_employee2').then(function(){
+            knex.schema.dropTableIfExists('tx_employee2').then(function() {
                 return knex.schema.dropTableIfExists('tx_address2');
             }),
-            knex.schema.dropTableIfExists('tx_delete_employee').then(function(){
+            knex.schema.dropTableIfExists('tx_delete_employee').then(function() {
                 return knex.schema.dropTableIfExists('tx_delete_address');
             }),
             knex.schema.dropTableIfExists('tx_deletewot_employee'),
             knex(schemaTable).del()
         ]).should.notify(done);
+    });
 
-     });
-
-    it("create a simple table", function () {
+    it('create a simple table', function () {
         schema.Employee = {};
         schema.Address = {};
-        schema.Employee.documentOf = "tx_employee";
-        schema.Address.documentOf = "tx_address";
-    
+        schema.Employee.documentOf = 'tx_employee';
+        schema.Address.documentOf = 'tx_address';
         schema.Employee.parents = {
-            homeAddress: {id: "address_id"}
-        }
-    
-        var Address = PersistObjectTemplate.create("Address", {
+            homeAddress: {id: 'address_id'}
+        };
+        var Address = PersistObjectTemplate.create('Address', {
             city: {type: String},
             state: {type: String}
         });
-    
-        var Employee = PersistObjectTemplate.create("Employee", {
-            name: {type: String, value: "Test Employee"},
+        var Employee = PersistObjectTemplate.create('Employee', {
+            name: {type: String, value: 'Test Employee'},
             homeAddress: {type: Address}
         });
-    
         var emp = new Employee();
         var add = new Address();
         add.city = 'New York';
         add.state = 'New York';
         emp.name = 'Ravi';
         emp.homeAddress = add;
-    
+
         PersistObjectTemplate.performInjections();
-    
         return syncTable(Employee)
             .then(syncTable.bind(this, Address))
             .then(createFKs.bind(this, Address))
             .then(openTransaction.bind(this))
-            .then(endTransaction.bind(this))
-           
-    
-        function transaction(){
+            .then(endTransaction.bind(this));
+
+        function transaction() {
             return insertToParent()
                 .then(insertToChild.bind(this));
         }
-    
-        function createFKs(){
-            return knex.raw('ALTER TABLE public.tx_employee ADD CONSTRAINT fk_tx_employee_address2 FOREIGN KEY (address_id) references public.tx_address("_id")' );
+
+        function createFKs() {
+            return knex.raw('ALTER TABLE public.tx_employee ADD CONSTRAINT fk_tx_employee_address2 FOREIGN KEY (address_id) references public.tx_address("_id")');
         }
-    
-        function syncTable(template){
+
+        function syncTable(template) {
             return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template);
         }
-    
+
         function openTransaction() {
-            tx =  PersistObjectTemplate.begin();
+            var tx =  PersistObjectTemplate.begin();
             tx.knex = knex.transaction(transaction);
             return tx;
         }
-    
-        function insertToChild(tx){
-            return emp.persistSave(tx).then(function(){
+
+        function insertToChild(tx) {
+            return emp.persistSave(tx).then(function() {
                 return tx;
             });
         }
-        function insertToParent(tx){
-            return add.persistSave(tx).then(function(){
+        function insertToParent(tx) {
+            return add.persistSave(tx).then(function() {
                 return tx;
             });
         }
-        function endTransaction(tx){
+        function endTransaction(tx) {
             return PersistObjectTemplate.end(tx);
         }
     });
 
 
-    it("create a simple table with SaveAll", function () {
+    it('create a simple table with SaveAll', function () {
         schema.Employee1 = {};
         schema.Address1 = {};
-        schema.Employee1.documentOf = "tx_employee1";
-        schema.Address1.documentOf = "tx_address1";
-
+        schema.Employee1.documentOf = 'tx_employee1';
+        schema.Address1.documentOf = 'tx_address1';
         schema.Employee1.parents = {
-            homeAddress: {id: "address_id"}
-        }
+            homeAddress: {id: 'address_id'}
+        };
 
-        var Address1 = PersistObjectTemplate.create("Address1", {
+        var Address1 = PersistObjectTemplate.create('Address1', {
             city: {type: String},
             state: {type: String}
         });
 
-        var Employee1 = PersistObjectTemplate.create("Employee1", {
-            name: {type: String, value: "Test Employee"},
+        var Employee1 = PersistObjectTemplate.create('Employee1', {
+            name: {type: String, value: 'Test Employee'},
             homeAddress: {type: Address1},
             isMarried: {type: Boolean, value: true}
         });
@@ -156,38 +144,26 @@ describe('persistor transaction checks', function () {
         return syncTable(Employee1)
             .then(syncTable.bind(this, Address1))
             .then(createFKs.bind(this, Address1))
-            .then(openTransaction.bind(this))
             .then(endTransaction.bind(this))
             .then(readAndSetDirty.bind(this));
 
-        function readAndSetDirty() {
-            return Employee1.getFromPersistWithQuery({name: 'Ravi'}).then(function(employee){
+        function readAndSetDirty(tx) {
+            return Employee1.getFromPersistWithQuery({name: 'Ravi'}).then(function(employee) {
                 employee.name = 'Ravi1';
                 return PersistObjectTemplate.saveAll(tx);
             }.bind(this))
         }
 
-        function transaction(){
-            return insertToParent()
-                .then(insertToChild.bind(this));
+        function createFKs() {
+            return knex.raw('ALTER TABLE public.tx_employee1 ADD CONSTRAINT fk_tx_employee1_address2 FOREIGN KEY (address_id) references public.tx_address1("_id") deferrable initially deferred');
         }
 
-        function createFKs(){
-            return knex.raw('ALTER TABLE public.tx_employee1 ADD CONSTRAINT fk_tx_employee1_address2 FOREIGN KEY (address_id) references public.tx_address1("_id") deferrable initially deferred' );
-        }
-
-        function syncTable(template){
+        function syncTable(template) {
             return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template);
         }
 
-        function openTransaction() {
-            tx =  PersistObjectTemplate.begin();
-            return tx;
-        }
-
-
-        function endTransaction(tx){
-            tx =  PersistObjectTemplate.begin();
+        function endTransaction() {
+            var tx =  PersistObjectTemplate.begin();
             var emp = new Employee1();
             var add = new Address1();
             add.city = 'New York';
@@ -199,32 +175,34 @@ describe('persistor transaction checks', function () {
             emp.setDirty(tx);
 
 
-            tx.postSave = function (tx) {};
+            tx.postSave = function () {};
 
-            return PersistObjectTemplate.saveAll(tx).then(function(){
-                return PersistObjectTemplate.end(tx);
+            return PersistObjectTemplate.saveAll(tx).then(function() {
+                return PersistObjectTemplate.end(tx).then(function() {
+                    return tx;
+                })
             });
         }
     });
 
-    it("create a simple table with setdirty and end operations..", function () {
+    it('create a simple table with setdirty and end operations..', function () {
         schema.Employee2 = {};
         schema.Address2 = {};
-        schema.Employee2.documentOf = "tx_employee2";
-        schema.Address2.documentOf = "tx_address2";
+        schema.Employee2.documentOf = 'tx_employee2';
+        schema.Address2.documentOf = 'tx_address2';
         schema.Employee2.cascadeSave = true;
 
         schema.Employee2.parents = {
-            homeAddress: {id: "address_id"}
-        }
+            homeAddress: {id: 'address_id'}
+        };
 
-        var Address2 = PersistObjectTemplate.create("Address2", {
+        var Address2 = PersistObjectTemplate.create('Address2', {
             city: {type: String},
             state: {type: String}
         });
 
-        var Employee2 = PersistObjectTemplate.create("Employee2", {
-            name: {type: String, value: "Test Employee"},
+        var Employee2 = PersistObjectTemplate.create('Employee2', {
+            name: {type: String, value: 'Test Employee'},
             homeAddress: {type: Address2},
             isMarried: {type: Boolean, value: true}
         });
@@ -241,26 +219,20 @@ describe('persistor transaction checks', function () {
             .then(endTransaction.bind(this));
 
 
-        function transaction(){
-            return insertToParent()
-                .then(insertToChild.bind(this));
+        function createFKs() {
+            return knex.raw('ALTER TABLE public.tx_employee2 ADD CONSTRAINT fk_tx_employee2_address2 FOREIGN KEY (address_id) references public.tx_address2("_id") deferrable initially deferred');
         }
 
-        function createFKs(){
-            return knex.raw('ALTER TABLE public.tx_employee2 ADD CONSTRAINT fk_tx_employee2_address2 FOREIGN KEY (address_id) references public.tx_address2("_id") deferrable initially deferred' );
-        }
-
-        function syncTable(template){
+        function syncTable(template) {
             return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template);
         }
 
         function openTransaction() {
-            tx =  PersistObjectTemplate.begin();
-            return tx;
+            return PersistObjectTemplate.begin();
         }
 
 
-        function endTransaction(tx){
+        function endTransaction(tx) {
             var emp = new Employee2();
             var add = new Address2();
             add.city = 'New York';
@@ -274,23 +246,23 @@ describe('persistor transaction checks', function () {
         }
     });
 
-    it("checking delete scenario", function () {
+    it('checking delete scenario', function () {
         schema.EmployeeDel = {};
         schema.AddressDel = {};
-        schema.EmployeeDel.documentOf = "tx_delete_employee";
-        schema.AddressDel.documentOf = "tx_delete_address";
+        schema.EmployeeDel.documentOf = 'tx_delete_employee';
+        schema.AddressDel.documentOf = 'tx_delete_address';
 
         schema.EmployeeDel.parents = {
-            homeAddress: {id: "address_id"}
+            homeAddress: {id: 'address_id'}
         }
 
-        var AddressDel = PersistObjectTemplate.create("AddressDel", {
+        var AddressDel = PersistObjectTemplate.create('AddressDel', {
             city: {type: String},
             state: {type: String}
         });
 
-        var EmployeeDel = PersistObjectTemplate.create("EmployeeDel", {
-            name: {type: String, value: "Test Del Employee"},
+        var EmployeeDel = PersistObjectTemplate.create('EmployeeDel', {
+            name: {type: String, value: 'Test Del Employee'},
             homeAddress: {type: AddressDel},
             isMarried: {type: Boolean, value: true}
         });
@@ -310,75 +282,62 @@ describe('persistor transaction checks', function () {
             .then(createFKs.bind(this))
             .then(openTransaction.bind(this))
             .then(endTransaction.bind(this))
-            .then(deleteCheck.bind(this))
+            .then(deleteCheck.bind(this));
 
 
 
 
-        function createFKs(){
-            return knex.raw('ALTER TABLE public.tx_delete_employee ADD CONSTRAINT fk_tx_delete_employee_address2 FOREIGN KEY (address_id) references public.tx_delete_address("_id") deferrable initially deferred' );
+        function createFKs() {
+            return knex.raw('ALTER TABLE public.tx_delete_employee ADD CONSTRAINT fk_tx_delete_employee_address2 FOREIGN KEY (address_id) references public.tx_delete_address("_id") deferrable initially deferred');
         }
 
-        function syncTable(template){
+        function syncTable(template) {
             return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template);
         }
-
         function openTransaction() {
-            tx =  PersistObjectTemplate.begin();
-            return tx;
+            return PersistObjectTemplate.begin();
         }
-
-        function insertToChild(tx){
-            return emp.persistSave(tx).then(function(){
-                return tx;
-            });
-        }
-        function insertToParent(txn){
-            return add.persistSave(txn).then(function(){
-                return txn;
-            });
-        }
-        function endTransaction(txn){
+        function endTransaction(txn) {
             emp.setDirty(txn);
             add.setDirty(txn);
             return PersistObjectTemplate.end(txn);
         }
-        function deleteCheck(txn) {
-            return EmployeeDel.deleteFromPersistWithQuery({name: 'Kumar'}).then(function(count){
+        function deleteCheck() {
+            return EmployeeDel.deleteFromPersistWithQuery({name: 'Kumar'}).then(function(count) {
                 expect(count).to.equal(1);
                 var func = function(knex) {
                     knex.where({city: 'New York'});
                 };
 
-                return AddressDel.deleteFromPersistWithQuery(func).then(function(count){
+                return AddressDel.deleteFromPersistWithQuery(func).then(function(count) {
                     expect(count).to.equal(1);
                 })
             })
         }
     });
 
-    it("checking setDirty without setting schema", function () {
-        var EmployeeSetDirty = PersistObjectTemplate.create("EmployeeSetDirty", {});
+    it('checking setDirty without setting schema', function () {
+        var EmployeeSetDirty = PersistObjectTemplate.create('EmployeeSetDirty', {});
         var emp = new EmployeeSetDirty();
         var tx =  PersistObjectTemplate.begin();
         emp.setDirty(tx);
         expect(Object.keys(tx.dirtyObjects).length).to.equal(0);
     });
 
-    it("when an array of field used without providing the table name..", function () {
+    it('when an array of field used without providing the table name..', function () {
         schema.EmployeeDelWithoutTable = {};
         schema.AddressDelWithoutTable = {};
-        schema.EmployeeDelWithoutTable.documentOf = "tx_deletewot_employee";
+        schema.EmployeeDelWithoutTable.documentOf = 'tx_deletewot_employee';
         schema.AddressDelWithoutTable.table = null;
 
         schema.EmployeeDelWithoutTable.parents = {
-            homeAddress: {id: "address_id"}
+            homeAddress: {id: 'address_id'}
         };
         schema.EmployeeDelWithoutTable.children = {};
 
-        var AddressDelWithoutTable = PersistObjectTemplate.create("AddressDelWithoutTable", {});
+        var AddressDelWithoutTable = PersistObjectTemplate.create('AddressDelWithoutTable', {});
 
-        var EmployeeDelWithoutTable = PersistObjectTemplate.create("EmployeeDelWithoutTable", {
+        var EmployeeDelWithoutTable = PersistObjectTemplate.create('EmployeeDelWithoutTable', {
             addresses: {type: Array, of: AddressDelWithoutTable, value: []}
         });
 
@@ -390,31 +349,31 @@ describe('persistor transaction checks', function () {
 
         PersistObjectTemplate.performInjections();
         PersistObjectTemplate._verifySchema();
-        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(EmployeeDelWithoutTable).then(function(){
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(EmployeeDelWithoutTable).then(function() {
             return emp.persistSave();
-        }).catch(function(e){
+        }).catch(function(e) {
             expect(e.message).to.contain('Missing children entry for addresses');
         })
-
     });
-    it("when an array of field used without providing the table name..", function () {
+
+    it('when an array of field used without providing the table name..', function () {
         schema.EmployeeDelWithoutTable1 = {};
         schema.AddressDelWithoutTable1 = {};
-        schema.EmployeeDelWithoutTable1.table = "tx_deletewot1_employee";
+        schema.EmployeeDelWithoutTable1.table = 'tx_deletewot1_employee';
         schema.AddressDelWithoutTable1.table = 'tx_deletewot1_address';
 
         schema.EmployeeDelWithoutTable1.children = {
-            addresses: {id: "employee_id"}
+            addresses: {id: 'employee_id'}
         };
         schema.AddressDelWithoutTable1.parents = {
-            employee: {id: "employee_id"}
+            employee: {id: 'employee_id'}
         };
 
-        var AddressDelWithoutTable1 = PersistObjectTemplate.create("AddressDelWithoutTable1", {
+        var AddressDelWithoutTable1 = PersistObjectTemplate.create('AddressDelWithoutTable1', {
             employee: {type: EmployeeDelWithoutTable1}
         });
 
-        var EmployeeDelWithoutTable1 = PersistObjectTemplate.create("EmployeeDelWithoutTable1", {
+        var EmployeeDelWithoutTable1 = PersistObjectTemplate.create('EmployeeDelWithoutTable1', {
             addresses: {type: Array, of: AddressDelWithoutTable1, value: []}
         });
 
@@ -432,36 +391,36 @@ describe('persistor transaction checks', function () {
         var promises = [PersistObjectTemplate.synchronizeKnexTableFromTemplate(EmployeeDelWithoutTable1),
             PersistObjectTemplate.synchronizeKnexTableFromTemplate(AddressDelWithoutTable1)];
 
-        return Promise.all(promises).then(function(){
+        return Promise.all(promises).then(function() {
             schema.AddressDelWithoutTable1.table = null;
             PersistObjectTemplate._verifySchema();
             return emp.persistSave();
-        }).catch(function(e){
+        }).catch(function(e) {
             expect(e.message).to.contain('Missing children entry for addresses');
         })
 
     })
 
-    it("calling setDirty to check cover cascadeSave and touch top...", function () {
+    it('calling setDirty to check cover cascadeSave and touch top...', function () {
         schema.EmployeeCascadeSaveWithTouchTop = {};
         schema.AddressCascadeSaveWithTouchTop = {};
-        schema.EmployeeCascadeSaveWithTouchTop.table = "tx_cascadetouch_employee";
+        schema.EmployeeCascadeSaveWithTouchTop.table = 'tx_cascadetouch_employee';
         schema.AddressCascadeSaveWithTouchTop.table = 'tx_cascadetouch_address';
         schema.EmployeeCascadeSaveWithTouchTop.cascadeSave = true;
 
 
         schema.EmployeeCascadeSaveWithTouchTop.children = {
-            addresses: {id: "employee_id"}
+            addresses: {id: 'employee_id'}
         };
         schema.AddressCascadeSaveWithTouchTop.parents = {
-            employee: {id: "employee_id"}
+            employee: {id: 'employee_id'}
         };
 
-        var AddressCascadeSaveWithTouchTop = PersistObjectTemplate.create("AddressCascadeSaveWithTouchTop", {
+        var AddressCascadeSaveWithTouchTop = PersistObjectTemplate.create('AddressCascadeSaveWithTouchTop', {
             employee: {type: EmployeeCascadeSaveWithTouchTop}
         });
 
-        var EmployeeCascadeSaveWithTouchTop = PersistObjectTemplate.create("EmployeeCascadeSaveWithTouchTop", {
+        var EmployeeCascadeSaveWithTouchTop = PersistObjectTemplate.create('EmployeeCascadeSaveWithTouchTop', {
             addresses: {type: Array, of: AddressCascadeSaveWithTouchTop, value: []}
         });
 
@@ -483,9 +442,9 @@ describe('persistor transaction checks', function () {
             PersistObjectTemplate.synchronizeKnexTableFromTemplate(AddressCascadeSaveWithTouchTop)];
 
 
-        return Promise.all(promises).then(function(){
+        return Promise.all(promises).then(function() {
             return emp.cascadeSave(txn);
-        }).catch(function(e){
+        }).catch(function(e) {
             expect(e.message).to.contain('Missing children entry for addresses');
         })
     });
