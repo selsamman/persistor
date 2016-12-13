@@ -133,17 +133,18 @@ var Account = PersistObjectTemplate.create('Account', {
         var balance = 0;
         var thisAccount = this;
         function processTransactions  (transactions) {
-            for (var ix = 0; ix < transactions.length; ++ix)
+            for (var ix = 0; ix < transactions.length; ++ix) {
                 switch (transactions[ix].type) {
-                    case 'debit':
-                        balance -= transactions[ix].amount;
-                        break;
-                    case 'credit':
-                        balance += transactions[ix].amount;
-                        break;
-                    case 'xfer':
-                        balance += transactions[ix].amount * (transactions[ix].fromAccount == thisAccount ? -1 : 1);
+                case 'debit':
+                    balance -= transactions[ix].amount;
+                    break;
+                case 'credit':
+                    balance += transactions[ix].amount;
+                    break;
+                case 'xfer':
+                    balance += transactions[ix].amount * (transactions[ix].fromAccount == thisAccount ? -1 : 1);
                 }
+            }
         }
         processTransactions(this.transactions);
         processTransactions(this.fromAccountTransactions);
@@ -255,7 +256,7 @@ var schema = {
     Role: {
         documentOf: 'pg/role',
         parents: {
-            customer: {id: 'customer_id', fetch: "yes"},
+            customer: {id: 'customer_id', fetch: 'yes'},
             account: {id: 'account_id'}
         }
     },
@@ -291,24 +292,21 @@ var schema = {
     }
 }
 
-var db;
-
 function clearCollection(template) {
     var collectionName = template.__collection__.match(/\//) ? template.__collection__ : 'mongo/' + template.__collection__;
     if (collectionName.match(/pg\/(.*)/)) {
         collectionName = RegExp.$1;
         return PersistObjectTemplate.dropKnexTable(template)
             .then(function () {
-                return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template).then(function(){return 0});
+                return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template).then(function() {return 0});
             });
     } else
-        throw "Invalid collection name " + collectionName;
+        throw 'Invalid collection name ' + collectionName;
 }
 
 describe('Banking from pgsql Example', function () {
     var knex;
     it ('opens the database Postgres', function () {
-        console.log('starting banking');
         return Q()
             .then(function () {
                 knex = require('knex')({
@@ -326,9 +324,6 @@ describe('Banking from pgsql Example', function () {
                 PersistObjectTemplate.performInjections(); // Normally done by getTemplates
             }).catch(function(e) {throw e;});
     });
-
-   
-
     it ('clears the bank', function () {
         return clearCollection(Role)
             .then(function (count) {
@@ -437,24 +432,18 @@ describe('Banking from pgsql Example', function () {
             expect(util.inspect(address)).to.not.equal('');
         })
     });
-    
     it('can insert', function (done) {
-        console.log('Can Insert');
         PersistObjectTemplate.begin();
         sam.setDirty();
         ashling.setDirty();
         karen.setDirty();
-    
-    
-        PersistObjectTemplate.end().then(function(id) {
-         //   writing = false;
-            console.log("Inserted");
+        PersistObjectTemplate.end().then(function(result) {
+            expect(result).to.equal(true);
             done();
-        }).catch(function(e){done(e)});
+        }).catch(function(e) {done(e)});
     });
-    
     it('Accounts have addresses', function (done) {
-        Account.getFromPersistWithQuery(null,{address: true}).then (function (accounts) {
+        Account.getFromPersistWithQuery(null, {address: true}).then (function (accounts) {
             expect(accounts.length).to.equal(2);
             expect(accounts[0].address.__template__.__name__).to.equal('Address');
             expect(accounts[0].number).to.equal(123412341234123);
@@ -465,23 +454,20 @@ describe('Banking from pgsql Example', function () {
             done(e)
         })
     });
-    
     it('Dummy fetchProperty call, object already contains the values', function () {
-        Account.getFromPersistWithQuery(null,{address: true}).then (function (accounts) {
+        Account.getFromPersistWithQuery(null, {address: true}).then (function (accounts) {
             accounts[0].fetchProperty('roles', null, {sort: {_id: 1}});
         }).catch(function(e) {
             throw e;
         })
     });
-    
     it('Dummy fetchProperty call, object already contains the values', function () {
-        Account.getFromPersistWithQuery(null,{address: true}).then (function (accounts) {
+        Account.getFromPersistWithQuery(null, {address: true}).then (function (accounts) {
             accounts[0].fetchProperty('roles', null, {sort: {_id: 0}});
         }).catch(function(e) {
             throw e;
         })
     });
-    
     it('Customers have addresses', function (done) {
         Customer.getFromPersistWithQuery(null, {primaryAddresses: true, secondaryAddresses: true}).then (function (customers) {
             expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
@@ -502,7 +488,7 @@ describe('Banking from pgsql Example', function () {
             .then(function () {
                 return sam.primaryAddresses[0].persistSave()
             })
-            .then(function (){done()})
+            .then(function () {done()})
             .catch(function(e) {
                 done(e)
             })
@@ -564,7 +550,7 @@ describe('Banking from pgsql Example', function () {
 
     it('$exists operator not supported', function () {
         return Transaction.getFromPersistWithQuery({amount:{'$exists': false}})
-            .catch(function(e){
+            .catch(function(e) {
                 expect(e).to.equal('Can\'t handle amount:{"$exists":false}');
             })
     });
@@ -620,7 +606,7 @@ describe('Banking from pgsql Example', function () {
     it('Can fetch all transactions', function (done) {
         Transaction.getFromPersistWithQuery({}, null, null, null, null, null, {sort: {_id: 1}}).then (function (transactions) {
             expect(transactions.length).to.equal(6);
-            transactions.forEach(function(t){transactionIds.push(t._id)});
+            transactions.forEach(function(t) {transactionIds.push(t._id)});
             done();
         }).catch(function(e) {
             done(e)
@@ -645,7 +631,7 @@ describe('Banking from pgsql Example', function () {
         })
     });
     it('Can fetch transfers', function (done) {
-        Transaction.getFromPersistWithQuery({type: 'xfer'},{account: true, fromAccount: true}).then (function (transactions) {
+        Transaction.getFromPersistWithQuery({type: 'xfer'}, {account: true, fromAccount: true}).then (function (transactions) {
             expect(transactions.length).to.equal(2);
             expect(transactions[0].type).to.equal('xfer');
             expect(transactions[1].type).to.equal('xfer');
@@ -657,7 +643,7 @@ describe('Banking from pgsql Example', function () {
         })
     });
     it('Can fetch transfers with $nin', function (done) {
-        Transaction.getFromPersistWithQuery({type: {$nin: ['debit', 'credit']}},{account: true, fromAccount: true}).then (function (transactions) {
+        Transaction.getFromPersistWithQuery({type: {$nin: ['debit', 'credit']}}, {account: true, fromAccount: true}).then (function (transactions) {
             expect(transactions.length).to.equal(2);
             expect(transactions[0].type).to.equal('xfer');
             expect(transactions[1].type).to.equal('xfer');
@@ -673,13 +659,11 @@ describe('Banking from pgsql Example', function () {
             expect(pojo[0].firstName).to.equal('Sam');
         });
     });
-    
     it('can fetch a pojo', function () {
         return PersistObjectTemplate.getPOJOFromQuery(Customer, {firstName: 'Sam'}).then(function (pojo) {
             expect(pojo[0].firstName).to.equal('Sam');
         });
     });
-    
     it('fetch using a knex queries in the callback...', function () {
         var func = function(knex) {
             knex.where({firstName: 'Sam'});
@@ -688,7 +672,6 @@ describe('Banking from pgsql Example', function () {
             expect(pojo[0].firstName).to.equal('Sam');
         });
     });
-    
     it('countFromKnexQuery using a knex queries in the callback...', function () {
         var func = function(knex) {
             knex.where({firstName: 'Sam'});
@@ -697,9 +680,6 @@ describe('Banking from pgsql Example', function () {
             expect(count).to.equal(1);
         });
     });
-    
-    
-    
     it('when trying to use where condition on a field that does not exist, getPOJO call should throw an error', function () {
         var func = function(knex) {
             knex.where({fieldNotAvailable: 'Sam'});
@@ -708,7 +688,6 @@ describe('Banking from pgsql Example', function () {
             expect(e.message).to.contain('column "fieldNotAvailable" does not exist');
         });
     });
-    
     it('check persist properties', function () {
         var persistorProps = PersistObjectTemplate.getPersistorProps();
         expect(Object.keys(persistorProps)).to.contains('Customer')
@@ -767,42 +746,36 @@ describe('Banking from pgsql Example', function () {
         expect(Account.getChildKey('transactions')).to.equal('account_id');
         expect(Transaction.getPrimaryKey()).to.equal('_id');
     });
-    
-    // it ('can go native with apply child', function (done) {
-    //     Transaction
-    //         .getKnex()
-    //         .select(["transaction.amount", "account.number"])
-    //         .from(Transaction.getTableName('Transaction'))
-    //         .rightOuterJoin.apply(Account.getKnex(), Transaction.knexChildJoin(Account, 'Transaction', 'Account', "fromAccountTransactions"))
-    //         .then(processResults)
-    //
-    //     function processResults(res) {
-    //         //console.log(JSON.stringify(res))
-    //         expect(res[0].amount + res[1].amount).to.equal(150);
-    //         done();
-    //     }
-   //});
-    
+    it ('can go native with apply child', function (done) {
+        Transaction
+            .getKnex()
+            .select(['transaction.amount', 'account.number'])
+            .from(Transaction.getTableName('transaction'))
+            .rightOuterJoin.apply(Account.getKnex(), Transaction.knexChildJoin(Account, 'transaction', 'account', 'fromAccountTransactions'))
+            .then(processResults)
+        function processResults(res) {
+            //console.log(JSON.stringify(res))
+            expect(res[0].amount + res[1].amount).to.equal(150);
+            done();
+        }
+    });
     it('Can find debits and amount $gt 1000 with $and', function () {
-        //TODO: and condition is not working...
+        //@TODO: and condition is not working...
         return Transaction.getFromPersistWithQuery({'$and':[{type: 'debit'}, {amount:{$gt: 100}}]}).then (function (transactions) {
             expect(transactions.length).to.equal(0);
         });
     });
-    
     it('Can find debits and amount $gt 1000 with $and', function () {
         return Transaction.getFromPersistWithQuery({type: {$in: ['debit', 'credit']}}).then (function (transactions) {
             expect(transactions.length).to.equal(4);
         });
     });
-    
     it('Can find debits and amount $gt 1000 with $and', function () {
-        //TODO: and condition is not working...
+        //@TODO: and condition is not working...
         return Transaction.getFromPersistWithQuery({type: {$nin: ['debit']}}).then (function (transactions) {
             expect(transactions.length).to.equal(4);
         });
     });
-    
     it('sam looks good on fresh fetch', function (done) {
         Customer.getFromPersistWithId(sam._id, {roles: true}).then (function (customer) {
             expect(customer.nullNumber).to.equal(null);
@@ -814,8 +787,7 @@ describe('Banking from pgsql Example', function () {
             expect(customer.roles[1].relationship).to.equal('primary');
             expect(customer.roles[1].customer).to.equal(customer);
             expect(customer.roles[1].accountPersistor.isFetched).to.equal(false);
-
-            return customer.roles[1].fetch({account: {fetch: {roles: {fetch: {customer: {fetch: {roles: true}}}}}}}).then( function ()
+            return customer.roles[1].fetch({account: {fetch: {roles: {fetch: {customer: {fetch: {roles: true}}}}}}}).then(function ()
             {
                 expect(customer.roles[1].account.number).to.equal(.123412341234123);
                 expect(customer.roles[1].account.roles.length).to.equal(3);
@@ -825,7 +797,6 @@ describe('Banking from pgsql Example', function () {
 
                 expect(customer.secondaryAddresses[0].returnedMail.length).to.equal(2);
 
-                var sam = customer;
                 var r1 = customer.referrers[0];
                 var r2 = customer.referrers[1];
                 var karen = r1.firstName == 'Karen' ? r1 : r2;
@@ -834,7 +805,7 @@ describe('Banking from pgsql Example', function () {
                 expect(ashling.firstName).to.equal('Ashling');
                 done();
             });
-        }).catch(function(e){
+        }).catch(function(e) {
             done(e)
         });
     });
@@ -851,7 +822,7 @@ describe('Banking from pgsql Example', function () {
             expect(customer.roles[1].customer).to.equal(customer);
             expect(customer.roles[1].accountPersistor.isFetched).to.equal(true); // because it was already fetched
 
-            return customer.roles[1].fetch({account: {fetch: {roles: {fetch: {customer: {fetch: {roles: true}}}}}}}).then( function ()
+            return customer.roles[1].fetch({account: {fetch: {roles: {fetch: {customer: {fetch: {roles: true}}}}}}}).then(function ()
             {
                 expect(customer.roles[1].account.number).to.equal(.123412341234123);
                 expect(customer.roles[1].account.roles.length).to.equal(3);
@@ -861,7 +832,6 @@ describe('Banking from pgsql Example', function () {
 
                 expect(customer.secondaryAddresses[0].returnedMail.length).to.equal(2);
 
-                var sam = customer;
                 var r1 = customer.referrers[0];
                 var r2 = customer.referrers[1];
                 var karen = r1.firstName == 'Karen' ? r1 : r2;
@@ -870,7 +840,7 @@ describe('Banking from pgsql Example', function () {
                 expect(ashling.firstName).to.equal('Ashling');
                 done();
             });
-        }).catch(function(e){
+        }).catch(function(e) {
             done(e)
         });
     });
@@ -878,7 +848,7 @@ describe('Banking from pgsql Example', function () {
         Account.getFromPersistWithId(samsAccount._id, {roles: true}).then (function (account) {
             expect(account.getBalance()).to.equal(samsAccount.getBalance());
             done();
-        }).catch(function(e){
+        }).catch(function(e) {
             done(e)
         });
     });
@@ -902,14 +872,14 @@ describe('Banking from pgsql Example', function () {
     });
 
     it('getFromPersistWithId without id value', function () {
-        return Transaction.getFromPersistWithId(null).catch(function(e){
+        return Transaction.getFromPersistWithId(null).catch(function(e) {
             expect(e.message).to.contain('The operator "undefined" is not permitted');
         })
 
     });
 
     it('getFromPersistWithId without id value', function () {
-        return Transaction.getFromPersistWithId(null).catch(function(e){
+        return Transaction.getFromPersistWithId(null).catch(function(e) {
             expect(e.message).to.contain('The operator "undefined" is not permitted');
         })
 
@@ -922,10 +892,10 @@ describe('Banking from pgsql Example', function () {
         }).then(function() {
             return Customer.getFromPersistWithQuery(null, {primaryAddresses: true, secondaryAddresses: true})
         }).then (function (customers) {
-                expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
-                    customers[1].primaryAddresses.length + customers[1].secondaryAddresses.length +
-                    customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(5);
-                done();
+            expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
+                customers[1].primaryAddresses.length + customers[1].secondaryAddresses.length +
+                customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(5);
+            done();
         })
         .catch(function(e) {
             done(e)
@@ -935,12 +905,12 @@ describe('Banking from pgsql Example', function () {
     it('Can update addresses', function (done) {
         Customer.getFromPersistWithId(sam._id).then (function (customer) {
             expect(customer.secondaryAddresses[0].city).to.equal('Rhinebeck');
-            customer.secondaryAddresses[0].city="Red Hook";
+            customer.secondaryAddresses[0].city = 'Red Hook';
             return customer.secondaryAddresses[0].persistSave();
         }).then(function () {
             return Customer.getFromPersistWithId(sam._id);
         }).then(function(customer) {
-            expect(customer.secondaryAddresses[0].city).to.equal("Red Hook");
+            expect(customer.secondaryAddresses[0].city).to.equal('Red Hook');
             done();
         }).catch(function(e) {
             done(e)
@@ -952,20 +922,16 @@ describe('Banking from pgsql Example', function () {
         var isStale = false;
         return Customer.getFromPersistWithId(sam._id).then (function (sam) {
             customer = sam;
-            expect(customer.secondaryAddresses[0].city).to.equal("Red Hook");
+            expect(customer.secondaryAddresses[0].city).to.equal('Red Hook');
             return knex('address').where({'_id': customer.secondaryAddresses[0]._id}).update({'__version__': 999});
         }).then(function () {
             return customer.secondaryAddresses[0].isStale()
         }).then(function(stale) {
-            isStale = stale
-            customer.secondaryAddresses[0].city="Red Hook";
+            isStale = stale;
+            customer.secondaryAddresses[0].city = 'Red Hook';
             return customer.secondaryAddresses[0].persistSave();
-        }).then(function () {
-            return Customer.getFromPersistWithId(sam._id);
-        }).then(function(customer) {
-            expect("This should not have worked").to.equal(null);
         }).catch(function(e) {
-            expect(e.message).to.equal("Update Conflict");
+            expect(e.message).to.equal('Update Conflict');
             expect(isStale).to.equal(true);
         });
     });
@@ -1032,28 +998,25 @@ describe('Banking from pgsql Example', function () {
 
         var txn1 = PersistObjectTemplate.begin(true);
         var txn2 = PersistObjectTemplate.begin(true);
-        var txn1Sam, txn1Karen, txn2Sam, txn2Karen;
+        var txn1Sam, txn2Karen;
 
-        Q()
-            .then(function () {
-                return Customer.getFromPersistWithId(sam._id)
-            }).then(function (sam) {
+        Q().then(function () {
+            return Customer.getFromPersistWithId(sam._id)
+        }).then(function (sam) {
             txn1Sam = sam;
             return Customer.getFromPersistWithId(sam._id)
         }).then(function (sam) {
-            txn2Sam = sam;
             expect(sam.firstName).to.equal('Sam');
             return Customer.getFromPersistWithId(karen._id)
         }).then(function (karen) {
-            txn1Karen = karen;
             return Customer.getFromPersistWithId(karen._id)
         }).then(function (karen) {
             txn2Karen = karen;
 
-            txn1Sam.firstName = "txn1Sam";
+            txn1Sam.firstName = 'txn1Sam';
             txn1Sam.setDirty(txn1);
 
-            txn2Karen.firstName = "txn2Karen";
+            txn2Karen.firstName = 'txn2Karen';
             txn2Karen.setDirty(txn2);
 
             txn1.postSave = function () {
@@ -1068,9 +1031,9 @@ describe('Banking from pgsql Example', function () {
                 }).then(function (sam) {
                     expect(sam.firstName).to.equal('Sam');     // Outside world still does not see new value of sam
                 })
-            }
+            };
             return PersistObjectTemplate.end(txn1); // Do update of sam but don't commit
-          }).then(function () {
+        }).then(function () {
             return Customer.getFromPersistWithId(sam._id)
         }).then(function (sam) {
             expect(sam.firstName).to.equal('txn1Sam');
@@ -1079,7 +1042,6 @@ describe('Banking from pgsql Example', function () {
             expect(karen.firstName).to.equal('txn2Karen');
             done();
         }).catch(function(err) {
-            console.error(err);
             done(err)
         });
     });
@@ -1090,8 +1052,6 @@ describe('Banking from pgsql Example', function () {
         1 - txn1 - end() procssesing: update sam (acquire exclusive lock)
         2 - txn2 - end() processing: update karen (aquire exclusive lock), update sam (request lock on sam),
         3 - txn1 - postSave processing: update karen (request exclusive lock that can't be granted   */
-        var oldLogging = PersistObjectTemplate.debugInfo;
-
         var txn1 = PersistObjectTemplate.begin(true);
         var txn2 = PersistObjectTemplate.begin(true);
         var txn1Sam, txn1Karen, txn2Sam, txn2Karen;
@@ -1101,10 +1061,10 @@ describe('Banking from pgsql Example', function () {
         Q()
         .then(function () {
             return Customer.getFromPersistWithId(sam._id)
-         }).then(function (sam) {
+        }).then(function (sam) {
             txn1Sam = sam;
             return Customer.getFromPersistWithId(sam._id)
-         }).then(function (sam) {
+        }).then(function (sam) {
             txn2Sam = sam;
             expect(sam.firstName).to.equal('txn1Sam');
             return Customer.getFromPersistWithId(karen._id)
@@ -1113,54 +1073,47 @@ describe('Banking from pgsql Example', function () {
             return Customer.getFromPersistWithId(karen._id)
         }).then(function (karen) {
             txn2Karen = karen;
-            txn1Sam.firstName = "txn1SamDead";
+            txn1Sam.firstName = 'txn1SamDead';
             txn1Sam.setDirty(txn1);
-            txn2Karen.firstName = "txn2KarenDead";
+            txn2Karen.firstName = 'txn2KarenDead';
             txn2Karen.setDirty(txn2);
-            txn2Sam.firstName = "txn2SamDead";
+            txn2Sam.firstName = 'txn2SamDead';
             txn2Sam.setDirty(txn2);
             txn1.postSave = function () {
-                console.log("txn1 postSave hook ending txn2 - update sam & karen")
                 Q.delay(100)
                 .then(function () {
                     // Update will not return because it is requesting a lock on Karen
-                    console.log("touching karen");
                     txn1Karen.persistTouch(txn1) // 3 update karen
-                        .then(function () {
-                            console.log("Persist Touch returned");
-                        })
                         .catch(function (e) {
-                            if (e.message != "Update Conflict")
+                            if (e.message != 'Update Conflict')
                                 done(e);
                             txn2Error = true;
                         })
-                })
+                });
                 // Update will not return because it is requesting a lock on Sam
                 return PersistObjectTemplate.end(txn2)// 2 - update sam (req lock), update karen (exc lock)
                 .catch(function (e) {
-                    expect(e.message).to.equal("Update Conflict");
+                    expect(e.message).to.equal('Update Conflict');
                     txn2Error = true;
                 });
-            }
-            console.log("ending 1 - update sam");
+            };
             return PersistObjectTemplate.end(txn1); // 1 - update sam (exc lock)
         }).catch(function (e) {
-            if (e.message != "Update Conflict")
+            if (e.message != 'Update Conflict')
                 done(e);
-            expect(e.message).to.equal("Update Conflict");
+            expect(e.message).to.equal('Update Conflict');
             txn1Error = true;
         }).then(function () {
             expect((txn1Error ? 1 : 0) + (txn2Error ? 1 : 0)).to.equal(1);
             expect(!!(txn1.innerError || txn2.innerError).toString().match(/deadlock/)).to.equal(true);
             return Customer.getFromPersistWithId(sam._id);
         }).then(function (sam) {
-            expect(sam.firstName).to.equal(txn1Error ? 'txn1Sam' : "txn1SamDead"); // Failed
+            expect(sam.firstName).to.equal(txn1Error ? 'txn1Sam' : 'txn1SamDead'); // Failed
             return Customer.getFromPersistWithId(karen._id);
         }).then(function (karen) {
-            expect(karen.firstName).to.equal(txn2Error ? 'txn2Karen' : "txn2KarenDead"); // Survived (Not sure order will always be the same
+            expect(karen.firstName).to.equal(txn2Error ? 'txn2Karen' : 'txn2KarenDead'); // Survived (Not sure order will always be the same
             done();
         }).catch(function(err) {
-            console.error(err);
             done(err)
         });
     });
@@ -1196,7 +1149,7 @@ describe('Banking from pgsql Example', function () {
         writing = true;
         var txn = PersistObjectTemplate.begin();
         var customerForCascadeSave = new Customer('customerForCascadeSaveWithoutTransaction', 'M', 'Last');
-        customerForCascadeSave.cascadeSave();
+        customerForCascadeSave.cascadeSave(txn);
         return PersistObjectTemplate.end().then (function () {
             return Customer.getFromPersistWithId(customerForCascadeSave._id)
         }).then (function (customer) {
@@ -1222,11 +1175,11 @@ describe('Banking from pgsql Example', function () {
 
 
     it('can delete', function (done) {
-        Customer.getFromPersistWithQuery({},{roles: {fetch: {account: true}}}).then (function (customers) {
+        Customer.getFromPersistWithQuery({}, {roles: {fetch: {account: true}}}).then (function (customers) {
             function deleteStuff(txn) {
                 var promises = [];
                 customers.forEach(function(customer) {
-                    customer.roles.forEach(function (role){
+                    customer.roles.forEach(function (role) {
                         var account = role.account;
                         account.roles.forEach(function(role) {
                             promises.push(role.persistDelete(txn));
@@ -1238,7 +1191,7 @@ describe('Banking from pgsql Example', function () {
                 return Q.allSettled(promises);
             }
             var txn = PersistObjectTemplate.begin();
-            txn.preSave= deleteStuff;
+            txn.preSave = deleteStuff;
             return PersistObjectTemplate.end(txn).then (function () {
                 return Customer.countFromPersistWithQuery()
             }).then (function (count) {
@@ -1251,12 +1204,12 @@ describe('Banking from pgsql Example', function () {
                 expect(count).to.equal(0);
                 done();
             });
-        }).catch(function(e){done(e)});
+        }).catch(function(e) {done(e)});
     });
 
     // it('closes the database', function (done) {
     //     persist_banking_pgsql.js.close().then(function () {
-    //         console.log("ending banking");
+    //         console.log('ending banking');
     //         done()
     //     });
     // });
