@@ -138,6 +138,27 @@ describe('persistor transaction checks', function () {
         return PersistObjectTemplate._injectIntoTemplate(Address);
     });
 
+
+    it("Creating multiple levels objects, using subsetOf property", function () {
+        schema.EmployeeMultiLevelsWithSubset = {};
+        schema.EmployeeMultiLevelsWithSubset.documentOf = 'employee_parent';
+        schema.AddressMultiLevelsWithSubset = {};
+        schema.AddressMultiLevelsWithSubset.subsetOf = 'ManagerMultiLevelsWithSubset';
+
+        var EmployeeMultiLevelsWithSubset = PersistObjectTemplate.create('EmployeeMultiLevelsWithSubset', {});
+        var ManagerMultiLevelsWithSubset = EmployeeMultiLevelsWithSubset.extend('ManagerMultiLevelsWithSubset', {});
+        var RegionalManagerMultiLevelsWithSubset = ManagerMultiLevelsWithSubset.extend('RegionalManagerMultiLevelsWithSubset', {});
+
+        var AddressMultiLevelsWithSubset = PersistObjectTemplate.create("AddressMultiLevelsWithSubset", {
+            city: {type: String},
+            state: {type: String}
+        });
+
+        var regionalManagerMultiLevelsWithSubset = new RegionalManagerMultiLevelsWithSubset();
+        PersistObjectTemplate._verifySchema();
+        PersistObjectTemplate._injectIntoTemplate(AddressMultiLevelsWithSubset);
+    });
+
     it("Creating parent child relationship with subset of propery in the schema", function () {
         schema.Employee = {};
         schema.Address = {};
@@ -149,24 +170,58 @@ describe('persistor transaction checks', function () {
         };
 
 
-        var Address = PersistObjectTemplate.create("Address", {
-            city: {type: String},
-            state: {type: String}
-        });
+        var Address = PersistObjectTemplate.create("Address", {});
 
-        var Employee = PersistObjectTemplate.create("Employee", {
-            name: {type: String, value: "Test Employee"},
-            homeAddress: {type: Address}
-        });
+        var Employee = PersistObjectTemplate.create("Employee", {});
 
-        var emp = new Employee();
-        var add = new Address();
         PersistObjectTemplate._verifySchema();
         return PersistObjectTemplate._injectIntoTemplate(Address);
     });
 
     it("Calling getTemplateByCollection for a dummy value should throw cannot find template for", function () {
         expect(PersistObjectTemplate.getTemplateByCollection.bind('dummy')).to.throw(Error);
+    });
+
+    it("No schema entries for templates referred in subsetOf", function () {
+        schema.AddressMainTemplate = {};
+        schema.AddressMainTemplate.subsetOf = 'ManagerMainTemplate';
+
+
+        var AddressMainTemplate = PersistObjectTemplate.create("AddressMainTemplate", {});
+
+        var EmployeeMainTemplate = PersistObjectTemplate.create("EmployeeMainTemplate", {});
+        var ExtEmployeeMainTemplate = EmployeeMainTemplate.extend("ExtEmployeeMainTemplate", {});
+        var ManagerMainTemplate = ExtEmployeeMainTemplate.extend("ManagerMainTemplate", {});
+
+        PersistObjectTemplate._verifySchema();
+        try{
+            PersistObjectTemplate._injectIntoTemplate(AddressMainTemplate);
+        }
+        catch(e){
+            expect(e.message).to.equal('Missing schema entry for ManagerMainTemplate');
+        }
+    });
+
+    it("top object contains the documentOf entry", function () {
+        schema.EmployeeMainTemplate2 = {};
+        schema.EmployeeMainTemplate2.table = "employee_main_template2";
+        schema.AddressMainTemplate2 = {};
+        schema.AddressMainTemplate2.subsetOf = 'ManagerMainTemplate2';
+;
+
+        var AddressMainTemplate2 = PersistObjectTemplate.create("AddressMainTemplate2", {});
+
+        var EmployeeMainTemplate2 = PersistObjectTemplate.create("EmployeeMainTemplate2", {});
+        var ExtEmployeeMainTemplate2 = EmployeeMainTemplate2.extend("ExtEmployeeMainTemplate2", {});
+        var ManagerMainTemplate2 = ExtEmployeeMainTemplate2.extend("ManagerMainTemplate2", {});
+
+        PersistObjectTemplate._verifySchema();
+        try{
+            PersistObjectTemplate._injectIntoTemplate(AddressMainTemplate2);
+        }
+        catch(e){
+            expect(e.message).to.equal('Missing schema entry for ManagerMainTemplate');
+        }
     });
 
 

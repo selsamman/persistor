@@ -162,11 +162,11 @@ Address.mixin({
 });
 var FirstLevel = PersistObjectTemplate.create('FirstLevel', {
     dummy: {type: String, value: 'dummy'},
-    address: {type: Array, of: Address}
+    address: {type: Array, of: Address},
+    cascadeCheck: {type: CascadeSaveCheck}
 });
 var CascadeSaveCheck = PersistObjectTemplate.create('CascadeSaveCheck', {
     name: {type: String, value: 'initial value'},
-    firstLevel: {type: FirstLevel},
     arrayOfFirstLevel: {type: Array, of: FirstLevel}
 });
 
@@ -283,14 +283,14 @@ var schema = {
     CascadeSaveCheck: {
         documentOf: "pg/cascadeSaveCheck",
         cascadeSave: true,
-        parents: {
-            firstLevel: {id: 'firstlevel_id'}
+        children: {
+            arrayOfFirstLevel: {id: 'firstlevel_id'}
         }
     },
     FirstLevel: {
         documentOf: "pg/FirstLevel",
         parents: {
-            firstLevel: {id: 'firstlevel_id'},
+            cascadeCheck: {id: 'firstlevel_id'},
             address: {id: 'address_id'}
         }
     }
@@ -391,7 +391,13 @@ describe("Banking from pgsql Example", function () {
 
     it ("setDirty with cascadeSave in the schema definition", function () {
         var cascadeObj = new CascadeSaveCheck();
-        cascadeObj.firstLevel = new FirstLevel();
+        cascadeObj.arrayOfFirstLevel = []
+        var obj1 = new FirstLevel();
+        obj1.cascadeCheck = cascadeObj;
+        var obj2 = new FirstLevel();
+        obj2.cascadeCheck = cascadeObj;
+        cascadeObj.arrayOfFirstLevel.push(obj1);
+        cascadeObj.arrayOfFirstLevel.push(obj2);
     
         var txn = PersistObjectTemplate.begin();
         cascadeObj.setDirty(txn, true, true);
@@ -490,6 +496,14 @@ describe("Banking from pgsql Example", function () {
         })
     });
 
+    it("Dummy fetchProperty call, object already contains the values", function () {
+        Account.getFromPersistWithQuery(null,{address: true}).then (function (accounts) {
+            accounts[0].fetchProperty('roles', null, {sort: {_id: 0}});
+        }).catch(function(e) {
+            throw e;
+        })
+    });
+
     it("Customers have addresses", function (done) {
         Customer.getFromPersistWithQuery(null, {primaryAddresses: true, secondaryAddresses: true}).then (function (customers) {
             expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
@@ -546,6 +560,37 @@ describe("Banking from pgsql Example", function () {
             done(e)
         })
     });
+
+    it("Can find debits with $eq", function () {
+        Transaction.getFromPersistWithQuery({type: {$eq: ['debit']}}).then (function (transactions) {
+            expect(transactions.length).to.equal(0);
+        });
+    });
+
+    it("get all transactions with with $lt", function () {
+        Transaction.getFromPersistWithQuery({amount:{'$lt': 500}}).then (function (transactions) {
+            expect(transactions.length).to.equal(6);
+        });
+    });
+
+    it("get all transactions with with $lte", function () {
+        return Transaction.getFromPersistWithQuery({amount:{'$lte': 500}}).then (function (transactions) {
+            expect(transactions.length).to.equal(6);
+        });
+    });
+    it("get all transactions with with $ne", function () {
+        return Transaction.getFromPersistWithQuery({amount:{'$ne': 100}}).then (function (transactions) {
+            expect(transactions.length).to.equal(4);
+        });
+    });
+
+    it("$exists operator not supported", function () {
+        return Transaction.getFromPersistWithQuery({amount:{'$exists': false}})
+            .catch(function(e){
+                expect(e).to.equal('Can\'t handle amount:{"$exists":false}');
+            })
+    });
+
     it("Can find debits and credits >= 200 with a $in", function (done) {
         Transaction.getFromPersistWithQuery({type: {$in: ['debit', 'credit']}, amount:{'$in': [200, 100], $gt: 100}}).then (function (transactions) {
             expect(transactions.length).to.equal(1);
@@ -651,6 +696,41 @@ describe("Banking from pgsql Example", function () {
         });
     });
 
+    it("can fetch a pojo", function () {
+        return PersistObjectTemplate.getPOJOFromQuery(Customer, {firstName: "Sam"}).then(function (pojo) {
+            expect(pojo[0].firstName).to.equal("Sam");
+        });
+    });
+
+    it("fetch using a knex queries in the callback...", function () {
+        var func = function(knex) {
+            knex.where({firstName: 'Sam'});
+        };
+        return PersistObjectTemplate.getPOJOFromQuery(Customer, func).then(function (pojo) {
+            expect(pojo[0].firstName).to.equal("Sam");
+        });
+    });
+
+    it("countFromKnexQuery using a knex queries in the callback...", function () {
+        var func = function(knex) {
+            knex.where({firstName: 'Sam'});
+        };
+        return PersistObjectTemplate.countFromKnexQuery(Customer, func).then(function (count) {
+            expect(count).to.equal(1);
+        });
+    });
+
+    
+
+    it("when trying to use where condition on a field that does not exist, getPOJO call should throw an error", function () {
+        var func = function(knex) {
+            knex.where({fieldNotAvailable: 'Sam'});
+        };
+        return PersistObjectTemplate.getPOJOFromQuery(Customer, func).catch(function (e) {
+            expect(e.message).to.contain('column "fieldNotAvailable" does not exist');
+        });
+    });
+
     it("check persist properties", function () {
         var persistorProps = PersistObjectTemplate.getPersistorProps();
         expect(Object.keys(persistorProps)).to.contains('Customer')
@@ -702,6 +782,13 @@ describe("Banking from pgsql Example", function () {
             done();
         }
     });
+    it ("getTableName without alias name", function () {
+        expect(Transaction.getTableName()).to.equal('transaction');
+        expect(Transaction.getParentKey('account')).to.equal('account_id');
+        expect(Account.getChildKey('transactions')).to.equal('account_id');
+        expect(Transaction.getPrimaryKey()).to.equal('_id');
+    });
+
     it ("can go native with apply child", function (done) {
         Transaction
             .getKnex()
@@ -717,6 +804,25 @@ describe("Banking from pgsql Example", function () {
         }
     });
 
+    it("Can find debits and amount $gt 1000 with $and", function () {
+        //TODO: and condition is not working...
+        return Transaction.getFromPersistWithQuery({'$and':[{type: 'debit'}, {amount:{$gt: 100}}]}).then (function (transactions) {
+            expect(transactions.length).to.equal(0);
+        });
+    });
+
+    it("Can find debits and amount $gt 1000 with $and", function () {
+        return Transaction.getFromPersistWithQuery({type: {$in: ['debit', 'credit']}}).then (function (transactions) {
+            expect(transactions.length).to.equal(4);
+        });
+    });
+
+    it("Can find debits and amount $gt 1000 with $and", function () {
+        //TODO: and condition is not working...
+        return Transaction.getFromPersistWithQuery({type: {$nin: ['debit']}}).then (function (transactions) {
+            expect(transactions.length).to.equal(4);
+        });
+    });
 
     it("sam looks good on fresh fetch", function (done) {
         Customer.getFromPersistWithId(sam._id, {roles: true}).then (function (customer) {
@@ -815,6 +921,21 @@ describe("Banking from pgsql Example", function () {
             done(e)
         })
     });
+
+    it("getFromPersistWithId without id value", function () {
+        return Transaction.getFromPersistWithId(null).catch(function(e){
+            expect(e.message).to.contain('The operator "undefined" is not permitted');
+        })
+            
+    });
+
+    it("getFromPersistWithId without id value", function () {
+        return Transaction.getFromPersistWithId(null).catch(function(e){
+            expect(e.message).to.contain('The operator "undefined" is not permitted');
+        })
+
+    });
+
     it("Customers have addresses after update of customer that does not fetch them", function (done) {
         Customer.getFromPersistWithQuery(null, {primaryAddresses: false, secondaryAddresses: false})
         .then (function (customers) {

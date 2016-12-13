@@ -266,6 +266,7 @@ describe('index synchronization checks', function () {
                     knex.schema.dropTableIfExists('DateTable'),
                     knex.schema.dropTableIfExists('CreatingTable'),
                     knex.schema.dropTableIfExists('CreateNewType'),
+                    knex.schema.dropTableIfExists('newTableWithoutTableDef'),
                     knex.schema.dropTableIfExists('IndexSyncTable').then(function() {
                         knex.schema.createTableIfNotExists('IndexSyncTable', function (table) {
                             table.double('id');
@@ -309,9 +310,9 @@ describe('index synchronization checks', function () {
                     return PersistObjectTemplate.checkForKnexTable(Employee).should.eventually.equal(true);
                 })
 
-        })
+        });
 
-
+        
         it('add a new type and check if the table creation is adding the index definition...', function(){
             schema.CreatingTable = {};
             schema.CreatingTable.documentOf = "pg/CreatingTable";
@@ -323,7 +324,7 @@ describe('index synchronization checks', function () {
                     this.id = id;
                     this.name = name;
                 }
-            })
+            });
 
             return Q(PersistObjectTemplate._verifySchema()).then(function () {
                 return PersistObjectTemplate.createKnexTable(CreatingTable).then(function () {
@@ -426,6 +427,59 @@ describe('index synchronization checks', function () {
         return invalidEmployee.persistSave().should.be.rejectedWith(Error, 'insert into');
     });
 
+    it('without defining the default db alias', function () {
+        var WithOutSchema = PersistObjectTemplate.create('WithOutSchema', {});
+        var obj = new WithOutSchema();
+        expect(obj.persistSave.bind(this)).to.throw('DB Alias __default__ not set');
+
+    });
+
+    it('checkobject calls', function () {
+        //var WithOutSchema1 = PersistObjectTemplate.create('WithOutSchema1', {});
+        //var obj = new WithOutSchema1();
+        var WithOutSchema1 = function() {};
+        var obj = new WithOutSchema1();
+        expect(PersistObjectTemplate.checkObject.bind(this, obj)).to.throw(Error, 'Attempt to save an non-templated Object');
+
+        WithOutSchema1 = PersistObjectTemplate.create('WithOutSchema1', {});
+        obj = new WithOutSchema1();
+        expect(PersistObjectTemplate.checkObject.bind(this, obj)).to.throw(Error, 'Schema entry missing for');
+    });
+
+    it('without defining table in the schema, try to synchronize', function () {
+        schema.newTableWithoutTableDef = {};
+        schema.newTableWithoutTableDef.documentOf = "pg/newTableWithoutTableDef";
+        schema.newTableWithoutTableDef.parents = {
+            homeAddress: {id: 'homeaddress_id' }
+        };
+        var AddressForMissingTableDef =  PersistObjectTemplate.create('AddressForMissingTableDef', {
+            street: {type: String, value: 'test'}
+        });
+
+        var newTableWithoutTableDef = PersistObjectTemplate.create("newTableWithoutTableDef", {
+            id: {type: String},
+            name: {type: String, value: "PrimaryIndex"},
+            init: function (id, name) {
+                this.id = id;
+                this.name = name;
+            }
+
+        });
+        PersistObjectTemplate._verifySchema();
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(newTableWithoutTableDef).then(function(){
+            newTableWithoutTableDef.mixin(
+                {
+                    homeAddress: {type: AddressForMissingTableDef},
+                    addresses: {type: Array, of: AddressForMissingTableDef, value: []},
+                    isMarried: {type: Boolean},
+                    numberOfKids: {type: Number},
+                    dob: {type:Date }
+                });
+            PersistObjectTemplate._verifySchema();
+            return PersistObjectTemplate.synchronizeKnexTableFromTemplate(newTableWithoutTableDef)
+        });
+
+    });
 
 })
 

@@ -560,10 +560,11 @@ describe('type mapping tests for parent/child relations', function () {
             PersistObjectTemplate.dropKnexTable(ParentWithMultiChildAttheSameLevelWithIndexes),
             PersistObjectTemplate.dropKnexTable(parentSynchronize),
             knex.schema.dropTableIfExists('NewTableWithComments'),
+            knex.schema.dropTableIfExists('NewTableWithComments1'),
             knex.schema.dropTableIfExists('ExistingTableWithComments'),
             knex.schema.dropTableIfExists('ExistingTableWithAField'),
             knex('index_schema_history').del()
-        ]).should.notify(done);;
+        ]).should.notify(done);
     })
 
     it("Parent type with an associated child will add add the fields from the child tables to the parent table", function (done) {
@@ -616,15 +617,15 @@ describe('type mapping tests for parent/child relations', function () {
             return PersistObjectTemplate.checkForKnexTable(Scenario_2_ParentWithMultiChildAttheSameLevel).should.eventually.equal(true);
         })
     });
-    
+
     it("Multilevel inheritance with multiple children at the multiple levels", function () {
         return PersistObjectTemplate.createKnexTable(ParentWithMultiChildAttheSameLevelWithIndexes).then(function (status) {
             return PersistObjectTemplate.checkForKnexTable(ParentWithMultiChildAttheSameLevelWithIndexes).should.eventually.equal(true);
         })
     });
-    
-    
-    
+
+
+
     it("Adding a child with index to a parent and synchronize.", function () {
         childSynchronize = parentSynchronize.extend("childSynchronize", {
             init: function() {
@@ -634,20 +635,20 @@ describe('type mapping tests for parent/child relations', function () {
             },
             dob: {type: Date}
         })
-    
+
         schema.childSynchronize = {};
-    
+
         schema.childSynchronize.indexes = JSON.parse('[{"name": "single_index","def": {"columns": ["dob"],"type": "unique"}}]');
-    
+
         PersistObjectTemplate._verifySchema();
-    
+
         return PersistObjectTemplate.synchronizeKnexTableFromTemplate(childSynchronize).then(function (status) {
             return PersistObjectTemplate.checkForKnexTable(parentSynchronize).should.eventually.equal(true).then(function(){
                 schema.childSynchronize.indexes = JSON.parse('[{"name": "scd_index","def": {"columns": ["name"],"type": "unique"}}]');
                    return PersistObjectTemplate.synchronizeKnexTableFromTemplate(childSynchronize);
             })
         })
-    
+
     });
 
 
@@ -671,6 +672,51 @@ describe('type mapping tests for parent/child relations', function () {
 
         })
 
+    });
+
+    it("table notification should only work with function callbacks", function () {
+        var NewTableWithComments1 = PersistObjectTemplate.create("NewTableWithComments1", {});
+
+        schema.NewTableWithComments1 = {documentOf: "pg/NewTableWithComments1"};
+        PersistObjectTemplate._verifySchema();
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(NewTableWithComments1, {}).catch(function(e){
+            expect(e.message).to.equal('persistor can only notify the table changes through a callback');
+        });
+
+    });
+
+    it("field change notification should only work with function callbacks", function () {
+        var NewTableWithComments1 = PersistObjectTemplate.create("NewTableWithComments1", {});
+
+        schema.NewTableWithComments1 = {documentOf: "pg/NewTableWithComments1"};
+        PersistObjectTemplate._verifySchema();
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(NewTableWithComments1)
+            .then(PersistObjectTemplate.synchronizeKnexTableFromTemplate.bind(PersistObjectTemplate, NewTableWithComments1, {}))
+            .catch(function(e){
+                expect(e.message).to.equal('persistor can only notify the field changes through a callback');
+            });
+    });
+
+    it("Create a new table and check if the comments added to the fields are included in the database", function () {
+
+        var AddressSyncChecks = PersistObjectTemplate.create("AddressSyncChecks", {});
+        var CustomerSyncChecks = PersistObjectTemplate.create("CustomerSyncChecks", {});
+
+        schema.AddressSyncChecks = {documentOf: "pg/AddressSyncChecks"};
+        schema.CustomerSyncChecks = {documentOf: "pg/CustomerSyncChecks"};
+        PersistObjectTemplate._verifySchema();
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(CustomerSyncChecks)
+            .then(function() {
+                CustomerSyncChecks.mixin({
+                    homeAddress: {type: AddressSyncChecks},
+                    alternateNames: {type: Array, of: String}
+                });
+
+                PersistObjectTemplate._verifySchema();
+                return PersistObjectTemplate.synchronizeKnexTableFromTemplate(CustomerSyncChecks);
+            }).catch(function (e) {
+                expect(e.message).to.equal('CustomerSyncChecks.homeAddress is missing a parents schema entry');
+            });
     });
 
     it("Adding a comment to an existing table", function () {
@@ -727,5 +773,60 @@ describe('type mapping tests for parent/child relations', function () {
         });
 
     });
+
+    it("Adding a foreign key refrence in children", function () {
+        var ObjectTemplate1 = require('supertype');
+        var PersistObjectTemplate1 = require('../index.js')(ObjectTemplate1, null, ObjectTemplate1);
+        var BaseTemplate_FK_on_Child = PersistObjectTemplate1.create("BaseTemplate_FK_on_Child", {
+            name: {type: String, value: 'Test Parent'}
+        });
+
+        var Address_FK_on_Child = PersistObjectTemplate1.create('Address_FK_on_Child', {
+            street: {type: String}
+        })
+
+        var ChildTemplateLevel1 = BaseTemplate_FK_on_Child.extend("ChildTemplateLevel1", {
+            dob: {type: Date}
+        });
+
+        var ChildTemplateLevel2 = ChildTemplateLevel1.extend("ChildTemplateLevel2", {
+            dob: {type: Date},
+            addresses: {type: Array, of: Address_FK_on_Child}
+        });
+        var schema = {};
+        schema.ChildTemplateLevel2 = {};
+        schema.ChildTemplateLevel1 = {};
+        schema.BaseTemplate_FK_on_Child = {};
+        schema.BaseTemplate_FK_on_Child = {
+            documentOf: "basetemplate_tbl",
+            children: {
+                addresses: {id: 'address_id'}
+            }
+        };
+        schema.Address_FK_on_Child = {};
+        schema.Address_FK_on_Child = {documentOf: "address_ref_tbl"};
+
+        PersistObjectTemplate1.setDB(knex, PersistObjectTemplate1.DB_Knex);
+        PersistObjectTemplate1.setSchema(schema);
+        PersistObjectTemplate1.performInjections();
+        PersistObjectTemplate1._verifySchema();
+    });
+
+    it("getDB without setting database", function () {
+        var ObjectTemplate1 = require('supertype');
+        var PersistObjectTemplate1 = require('../index.js')(ObjectTemplate1, null, ObjectTemplate1);
+        expect(PersistObjectTemplate1.getDB.bind(this, 'pg')).to.throw('You must do PersistObjectTempate.setDB');
+
+    });
+
+    it("without schema..", function () {
+        var ObjectTemplate1 = require('supertype');
+        var PersistObjectTemplate1 = require('../index.js')(ObjectTemplate1, null, ObjectTemplate1);
+        var emptySchema = PersistObjectTemplate1._verifySchema();
+        expect(emptySchema).to.be.an('undefined');
+    });
+
+
+
 })
 

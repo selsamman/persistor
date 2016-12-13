@@ -50,6 +50,7 @@ describe('persistor transaction checks', function () {
             knex.schema.dropTableIfExists('tx_delete_employee').then(function(){
                 return knex.schema.dropTableIfExists('tx_delete_address');
             }),
+            knex.schema.dropTableIfExists('tx_deletewot_employee'),
             knex(schemaTable).del()
         ]).should.notify(done);
 
@@ -60,56 +61,56 @@ describe('persistor transaction checks', function () {
         schema.Address = {};
         schema.Employee.documentOf = "tx_employee";
         schema.Address.documentOf = "tx_address";
-
+    
         schema.Employee.parents = {
             homeAddress: {id: "address_id"}
         }
-
+    
         var Address = PersistObjectTemplate.create("Address", {
             city: {type: String},
             state: {type: String}
         });
-
+    
         var Employee = PersistObjectTemplate.create("Employee", {
             name: {type: String, value: "Test Employee"},
             homeAddress: {type: Address}
         });
-
+    
         var emp = new Employee();
         var add = new Address();
         add.city = 'New York';
         add.state = 'New York';
         emp.name = 'Ravi';
         emp.homeAddress = add;
-
+    
         PersistObjectTemplate.performInjections();
-
+    
         return syncTable(Employee)
             .then(syncTable.bind(this, Address))
             .then(createFKs.bind(this, Address))
             .then(openTransaction.bind(this))
             .then(endTransaction.bind(this))
-            
-
+           
+    
         function transaction(){
             return insertToParent()
                 .then(insertToChild.bind(this));
         }
-
+    
         function createFKs(){
             return knex.raw('ALTER TABLE public.tx_employee ADD CONSTRAINT fk_tx_employee_address2 FOREIGN KEY (address_id) references public.tx_address("_id")' );
         }
-
+    
         function syncTable(template){
             return PersistObjectTemplate.synchronizeKnexTableFromTemplate(template);
         }
-
+    
         function openTransaction() {
             tx =  PersistObjectTemplate.begin();
             tx.knex = knex.transaction(transaction);
             return tx;
         }
-
+    
         function insertToChild(tx){
             return emp.persistSave(tx).then(function(){
                 return tx;
@@ -143,7 +144,8 @@ describe('persistor transaction checks', function () {
 
         var Employee1 = PersistObjectTemplate.create("Employee1", {
             name: {type: String, value: "Test Employee"},
-            homeAddress: {type: Address1}
+            homeAddress: {type: Address1},
+            isMarried: {type: Boolean, value: true}
         });
 
 
@@ -155,8 +157,15 @@ describe('persistor transaction checks', function () {
             .then(syncTable.bind(this, Address1))
             .then(createFKs.bind(this, Address1))
             .then(openTransaction.bind(this))
-            .then(endTransaction.bind(this));
+            .then(endTransaction.bind(this))
+            .then(readAndSetDirty.bind(this));
 
+        function readAndSetDirty() {
+            return Employee1.getFromPersistWithQuery({name: 'Ravi'}).then(function(employee){
+                employee.name = 'Ravi1';
+                return PersistObjectTemplate.saveAll(tx);
+            }.bind(this))
+        }
 
         function transaction(){
             return insertToParent()
@@ -185,14 +194,16 @@ describe('persistor transaction checks', function () {
             add.state = 'New York';
             emp.name = 'Ravi';
             emp.homeAddress = add;
-            emp.setDirty(tx);
+            tx.touchTop = true;
             add.setDirty(tx);
+            emp.setDirty(tx);
 
-            tx.postSave = function (tx) {
-                console.log('post save..');
-            };
 
-            return PersistObjectTemplate.saveAll(tx);
+            tx.postSave = function (tx) {};
+
+            return PersistObjectTemplate.saveAll(tx).then(function(){
+                return PersistObjectTemplate.end(tx);
+            });
         }
     });
 
@@ -201,6 +212,7 @@ describe('persistor transaction checks', function () {
         schema.Address2 = {};
         schema.Employee2.documentOf = "tx_employee2";
         schema.Address2.documentOf = "tx_address2";
+        schema.Employee2.cascadeSave = true;
 
         schema.Employee2.parents = {
             homeAddress: {id: "address_id"}
@@ -213,7 +225,8 @@ describe('persistor transaction checks', function () {
 
         var Employee2 = PersistObjectTemplate.create("Employee2", {
             name: {type: String, value: "Test Employee"},
-            homeAddress: {type: Address2}
+            homeAddress: {type: Address2},
+            isMarried: {type: Boolean, value: true}
         });
 
 
@@ -254,7 +267,8 @@ describe('persistor transaction checks', function () {
             add.state = 'New York';
             emp.name = 'Ravi';
             emp.homeAddress = add;
-            emp.setDirty(tx);
+            tx.touchTop = true;
+            emp.setDirty(tx, false, true);
             add.setDirty(tx);
             return PersistObjectTemplate.end(tx);
         }
@@ -277,7 +291,8 @@ describe('persistor transaction checks', function () {
 
         var EmployeeDel = PersistObjectTemplate.create("EmployeeDel", {
             name: {type: String, value: "Test Del Employee"},
-            homeAddress: {type: AddressDel}
+            homeAddress: {type: AddressDel},
+            isMarried: {type: Boolean, value: true}
         });
 
         var emp = new EmployeeDel();
@@ -324,13 +339,154 @@ describe('persistor transaction checks', function () {
             });
         }
         function endTransaction(txn){
-            emp.setDirty(tx);
-            add.setDirty(tx);
-            return PersistObjectTemplate.end(tx);
+            emp.setDirty(txn);
+            add.setDirty(txn);
+            return PersistObjectTemplate.end(txn);
         }
         function deleteCheck(txn) {
-            //return EmployeeDel.deleteFromPersistWithQuery({name: {$eq: 'Kumar'}});
-            return EmployeeDel.deleteFromPersistWithQuery({name: 'Kumar'});
+            return EmployeeDel.deleteFromPersistWithQuery({name: 'Kumar'}).then(function(count){
+                expect(count).to.equal(1);
+                var func = function(knex) {
+                    knex.where({city: 'New York'});
+                };
+
+                return AddressDel.deleteFromPersistWithQuery(func).then(function(count){
+                    expect(count).to.equal(1);
+                })
+            })
         }
+    });
+
+    it("checking setDirty without setting schema", function () {
+        var EmployeeSetDirty = PersistObjectTemplate.create("EmployeeSetDirty", {});
+        var emp = new EmployeeSetDirty();
+        var tx =  PersistObjectTemplate.begin();
+        emp.setDirty(tx);
+        expect(Object.keys(tx.dirtyObjects).length).to.equal(0);
+    });
+
+    it("when an array of field used without providing the table name..", function () {
+        schema.EmployeeDelWithoutTable = {};
+        schema.AddressDelWithoutTable = {};
+        schema.EmployeeDelWithoutTable.documentOf = "tx_deletewot_employee";
+        schema.AddressDelWithoutTable.table = null;
+
+        schema.EmployeeDelWithoutTable.parents = {
+            homeAddress: {id: "address_id"}
+        };
+        schema.EmployeeDelWithoutTable.children = {};
+
+        var AddressDelWithoutTable = PersistObjectTemplate.create("AddressDelWithoutTable", {});
+
+        var EmployeeDelWithoutTable = PersistObjectTemplate.create("EmployeeDelWithoutTable", {
+            addresses: {type: Array, of: AddressDelWithoutTable, value: []}
+        });
+
+        var emp = new EmployeeDelWithoutTable();
+        var add1 = new AddressDelWithoutTable();
+        var add2 = new AddressDelWithoutTable();
+        emp.addresses.push(add1);
+        emp.addresses.push(add2);
+
+        PersistObjectTemplate.performInjections();
+        PersistObjectTemplate._verifySchema();
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(EmployeeDelWithoutTable).then(function(){
+            return emp.persistSave();
+        }).catch(function(e){
+            expect(e.message).to.contain('Missing children entry for addresses');
+        })
+
+    });
+    it("when an array of field used without providing the table name..", function () {
+        schema.EmployeeDelWithoutTable1 = {};
+        schema.AddressDelWithoutTable1 = {};
+        schema.EmployeeDelWithoutTable1.table = "tx_deletewot1_employee";
+        schema.AddressDelWithoutTable1.table = 'tx_deletewot1_address';
+
+        schema.EmployeeDelWithoutTable1.children = {
+            addresses: {id: "employee_id"}
+        };
+        schema.AddressDelWithoutTable1.parents = {
+            employee: {id: "employee_id"}
+        };
+
+        var AddressDelWithoutTable1 = PersistObjectTemplate.create("AddressDelWithoutTable1", {
+            employee: {type: EmployeeDelWithoutTable1}
+        });
+
+        var EmployeeDelWithoutTable1 = PersistObjectTemplate.create("EmployeeDelWithoutTable1", {
+            addresses: {type: Array, of: AddressDelWithoutTable1, value: []}
+        });
+
+        var emp = new EmployeeDelWithoutTable1();
+        var add1 = new AddressDelWithoutTable1();
+        var add2 = new AddressDelWithoutTable1();
+        add1.employee = emp;
+        add2.employee = emp;
+        emp.addresses.push(add1);
+        emp.addresses.push(add2);
+
+        PersistObjectTemplate.performInjections();
+        PersistObjectTemplate._verifySchema();
+
+        var promises = [PersistObjectTemplate.synchronizeKnexTableFromTemplate(EmployeeDelWithoutTable1),
+            PersistObjectTemplate.synchronizeKnexTableFromTemplate(AddressDelWithoutTable1)];
+
+        return Promise.all(promises).then(function(){
+            schema.AddressDelWithoutTable1.table = null;
+            PersistObjectTemplate._verifySchema();
+            return emp.persistSave();
+        }).catch(function(e){
+            expect(e.message).to.contain('Missing children entry for addresses');
+        })
+
+    })
+
+    it("calling setDirty to check cover cascadeSave and touch top...", function () {
+        schema.EmployeeCascadeSaveWithTouchTop = {};
+        schema.AddressCascadeSaveWithTouchTop = {};
+        schema.EmployeeCascadeSaveWithTouchTop.table = "tx_cascadetouch_employee";
+        schema.AddressCascadeSaveWithTouchTop.table = 'tx_cascadetouch_address';
+        schema.EmployeeCascadeSaveWithTouchTop.cascadeSave = true;
+
+
+        schema.EmployeeCascadeSaveWithTouchTop.children = {
+            addresses: {id: "employee_id"}
+        };
+        schema.AddressCascadeSaveWithTouchTop.parents = {
+            employee: {id: "employee_id"}
+        };
+
+        var AddressCascadeSaveWithTouchTop = PersistObjectTemplate.create("AddressCascadeSaveWithTouchTop", {
+            employee: {type: EmployeeCascadeSaveWithTouchTop}
+        });
+
+        var EmployeeCascadeSaveWithTouchTop = PersistObjectTemplate.create("EmployeeCascadeSaveWithTouchTop", {
+            addresses: {type: Array, of: AddressCascadeSaveWithTouchTop, value: []}
+        });
+
+
+        var txn = PersistObjectTemplate.begin();
+        var emp = new EmployeeCascadeSaveWithTouchTop();
+        var add1 = new AddressCascadeSaveWithTouchTop();
+        var add2 = new AddressCascadeSaveWithTouchTop();
+        add1.employee = emp;
+        add2.employee = emp;
+        emp.addresses.push(add1);
+        emp.addresses.push(add2);
+
+        PersistObjectTemplate.performInjections();
+        PersistObjectTemplate._verifySchema();
+        emp.setDirty(txn, false, true);
+
+        var promises = [PersistObjectTemplate.synchronizeKnexTableFromTemplate(EmployeeCascadeSaveWithTouchTop),
+            PersistObjectTemplate.synchronizeKnexTableFromTemplate(AddressCascadeSaveWithTouchTop)];
+
+
+        return Promise.all(promises).then(function(){
+            return emp.cascadeSave(txn);
+        }).catch(function(e){
+            expect(e.message).to.contain('Missing children entry for addresses');
+        })
     });
 });
