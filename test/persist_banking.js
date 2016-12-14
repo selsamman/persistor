@@ -657,7 +657,7 @@ describe('Banking Example', function () {
                 expect(count).to.equal(5);
             }).then(function() {
                 return Customer.deleteFromPersistWithQuery({lastName: {$eq: 'testDelete'}})
-            }).then(function() {
+            }).then(function(result) {
                 return Customer.countFromPersistWithQuery();
             }).then(function(count) {
                 expect(count).to.equal(4);
