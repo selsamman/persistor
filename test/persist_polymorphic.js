@@ -9,7 +9,8 @@ var chaiAsPromised = require('chai-as-promised');
 chai.should();
 chai.use(chaiAsPromised);
 
-var Q = require('q');
+
+var Promise = require('bluebird');
 var ObjectTemplate = require('supertype');
 var PersistObjectTemplate = require('../index.js')(ObjectTemplate, null, ObjectTemplate);
 
@@ -483,7 +484,7 @@ var schema = {
 }
 
 
-
+var schemaTable = 'index_schema_history';
 describe('type mapping tests for parent/child relations', function () {
     var knex = require('knex')({
         client: 'pg',
@@ -503,7 +504,7 @@ describe('type mapping tests for parent/child relations', function () {
             PersistObjectTemplate.performInjections(); // Normally done by getTemplates
         })();
 
-        return Q.all([PersistObjectTemplate.dropKnexTable(Parent),
+        return Promise.all([PersistObjectTemplate.dropKnexTable(Parent),
             PersistObjectTemplate.dropKnexTable(Parent_Idx),
             PersistObjectTemplate.dropKnexTable(ChildCreatesThisParent),
             PersistObjectTemplate.dropKnexTable(ChildCreatesThisParent1),
@@ -517,7 +518,7 @@ describe('type mapping tests for parent/child relations', function () {
             knex.schema.dropTableIfExists('NewTableWithComments1'),
             knex.schema.dropTableIfExists('ExistingTableWithComments'),
             knex.schema.dropTableIfExists('ExistingTableWithAField'),
-            knex('index_schema_history').del()
+            knex.schema.dropTableIfExists(schemaTable)
         ]).should.notify(done);
     })
 
@@ -537,7 +538,7 @@ describe('type mapping tests for parent/child relations', function () {
 
     it('When trying to create child table, system should create the parent table', function () {
         return PersistObjectTemplate.createKnexTable(ChildToCreate).then(function () {
-            return Q.all([PersistObjectTemplate.checkForKnexTable(ChildCreatesThisParent, 'ChildCreatesThisParent').should.eventually.equal(true),
+            return Promise.all([PersistObjectTemplate.checkForKnexTable(ChildCreatesThisParent, 'ChildCreatesThisParent').should.eventually.equal(true),
                 PersistObjectTemplate.checkForKnexTable(ChildToCreate, 'ChildToCreate').should.eventually.equal(false)
             ]);
         })

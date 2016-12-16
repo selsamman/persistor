@@ -6,7 +6,7 @@ var chai = require('chai');
 var expect = require('chai').expect;
 
 var chaiAsPromised = require('chai-as-promised');
-
+var Promise = require('bluebird');
 
 chai.should();
 chai.use(chaiAsPromised);
@@ -94,7 +94,6 @@ var ExtendParent = Parent.extend('ExtendParent', {
     extend: {type: String}
 });
 
-var Q = require('Q');
 var schema = {
     Employee: {
         documentOf: 'pg/employee'
@@ -184,7 +183,7 @@ describe('index synchronization checks', function () {
             PersistObjectTemplate.setSchema(schema);
             PersistObjectTemplate.performInjections(); // Normally done by getTemplates
         })();
-        return Q.all([
+        return Promise.all([
             knex.schema.dropTableIfExists('NewTable'),
             knex.schema.dropTableIfExists('employee'),
             PersistObjectTemplate.dropKnexTable(Employee),
@@ -206,7 +205,7 @@ describe('index synchronization checks', function () {
                     table.text('name')
                 })
             }),
-            knex(schemaTable).del(),
+            knex.schema.dropTableIfExists(schemaTable)
 
         ]).should.notify(done);
     });
@@ -303,7 +302,7 @@ describe('index synchronization checks', function () {
             }
         });
 
-        return Q(PersistObjectTemplate._verifySchema()).then(function () {
+        return Promise.resolve(PersistObjectTemplate._verifySchema()).then(function () {
             return PersistObjectTemplate.createKnexTable(CreatingTable).then(function () {
                 return PersistObjectTemplate.checkForKnexTable(CreatingTable).should.eventually.equal(true);
             })
@@ -346,7 +345,7 @@ describe('index synchronization checks', function () {
                 .orderBy('sequence_id', 'desc')
                 .limit(1)
                 .then(function (records) {
-                    return Q(records[0].schema);
+                    return Promise.resolve(records[0].schema);
                 })
         }).should.eventually.contain('NewTable');
 

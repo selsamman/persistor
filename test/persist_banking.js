@@ -16,6 +16,8 @@ PersistObjectTemplate.debug = function(m, t) {
     }
 }
 */
+var Promise = require('bluebird');
+
 var Customer = PersistObjectTemplate.create('Customer', {
     init: function (first, middle, last) {
         this.firstName = first;
@@ -696,7 +698,7 @@ describe('Banking Example', function () {
                 }
 
                 promises.push(Customer.deleteFromPersistWithQuery({lastName: {$eq: 'Elsamman'}}));
-                return Q.allSettled(promises).then (function () {
+                return Promise.all(promises).then (function () {
                     return Customer.countFromPersistWithQuery()
                 }).then (function (count) {
                     expect(count).to.equal(1);

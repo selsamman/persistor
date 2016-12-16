@@ -6,7 +6,7 @@
 
 var expect = require('chai').expect;
 var util = require('util');
-var Q = require('q');
+var Promise = require('bluebird');
 var _ = require('underscore');
 var ObjectTemplate = require('supertype');
 var PersistObjectTemplate = require('../index.js')(ObjectTemplate, null, ObjectTemplate);
@@ -307,7 +307,7 @@ function clearCollection(template) {
 describe('Banking from pgsql Example', function () {
     var knex;
     it ('opens the database Postgres', function () {
-        return Q()
+        return Promise.resolve()
             .then(function () {
                 knex = require('knex')({
                     client: 'pg',
@@ -481,7 +481,7 @@ describe('Banking from pgsql Example', function () {
     it('Accounts sloppily replace addresses', function (done) {
         sam.primaryAddresses.splice(0, 1);
         sam.addAddress('primary', ['500 East 83d', 'Apt 1E'], 'New York', 'NY', '10028');
-        Q()
+        Promise.resolve()
             .then(function () {
                 return sam.persistSave()
             })
@@ -684,7 +684,7 @@ describe('Banking from pgsql Example', function () {
         var func = function(knex) {
             knex.where({fieldNotAvailable: 'Sam'});
         };
-        return PersistObjectTemplate.getPOJOFromQuery(Customer, func).catch(function (e) {
+        return PersistObjectTemplate.getPOJOFromQuery.call(PersistObjectTemplate, Customer, func).catch(function (e) {
             expect(e.message).to.contain('column "fieldNotAvailable" does not exist');
         });
     });
@@ -1000,7 +1000,7 @@ describe('Banking from pgsql Example', function () {
         var txn2 = PersistObjectTemplate.begin(true);
         var txn1Sam, txn2Karen;
 
-        Q().then(function () {
+        Promise.resolve().then(function () {
             return Customer.getFromPersistWithId(sam._id)
         }).then(function (sam) {
             txn1Sam = sam;
@@ -1020,7 +1020,7 @@ describe('Banking from pgsql Example', function () {
             txn2Karen.setDirty(txn2);
 
             txn1.postSave = function () {
-                return Q()
+                return Promise.resolve()
                 .then(function () {
                     return Customer.getFromPersistWithId(sam._id);
                 }).then(function (sam) {
@@ -1058,7 +1058,7 @@ describe('Banking from pgsql Example', function () {
         var txn1Error = false;
         var txn2Error = false;
 
-        Q()
+        Promise.resolve()
         .then(function () {
             return Customer.getFromPersistWithId(sam._id)
         }).then(function (sam) {
@@ -1080,7 +1080,7 @@ describe('Banking from pgsql Example', function () {
             txn2Sam.firstName = 'txn2SamDead';
             txn2Sam.setDirty(txn2);
             txn1.postSave = function () {
-                Q.delay(100)
+                Promise.delay(100)
                 .then(function () {
                     // Update will not return because it is requesting a lock on Karen
                     txn1Karen.persistTouch(txn1) // 3 update karen
@@ -1188,7 +1188,7 @@ describe('Banking from pgsql Example', function () {
                     });
                     promises.push(customer.persistDelete());
                 });
-                return Q.allSettled(promises);
+                return Promise.all(promises);
             }
             var txn = PersistObjectTemplate.begin();
             txn.preSave = deleteStuff;

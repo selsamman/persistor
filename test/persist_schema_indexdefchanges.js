@@ -6,7 +6,7 @@ var chaiAsPromised = require('chai-as-promised');
 chai.should();
 chai.use(chaiAsPromised);
 
-var Q = require('q');
+var Promise = require('bluebird');
 var ObjectTemplate = require('supertype');
 var PersistObjectTemplate = require('../index.js')(ObjectTemplate, null, ObjectTemplate);
 
@@ -228,7 +228,7 @@ describe('index synchronization checks', function () {
             PersistObjectTemplate.performInjections(); // Normally done by getTemplates
         })();
 
-        return Q.all([
+        return Promise.all([
             knex.schema.dropTableIfExists('notificationCheck'),
             knex.schema.dropTableIfExists('caseChangeCheck'),
             PersistObjectTemplate.dropKnexTable(Employee),
@@ -338,7 +338,7 @@ describe('index synchronization checks', function () {
 
     it('creating parent and child and synchronize the parent to check the child table indexes', function (done) {
         PersistObjectTemplate.synchronizeKnexTableFromTemplate(Employee).then(function () {
-            Q.all([getIndexes('Employee').should.eventually.have.length(2),
+            Promise.all([getIndexes('Employee').should.eventually.have.length(2),
                 getIndexes('Manager').should.eventually.have.length(1),
                 getIndexes('Executive').should.eventually.have.length(1)]).should.notify(done);
         });

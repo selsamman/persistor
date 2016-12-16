@@ -6,10 +6,9 @@ var chaiAsPromised = require('chai-as-promised');
 chai.should();
 chai.use(chaiAsPromised);
 
-var Q = require('q');
 var ObjectTemplate = require('supertype');
 var PersistObjectTemplate = require('../index.js')(ObjectTemplate, null, ObjectTemplate);
-
+var Promise = require('bluebird');
 var knex = require('knex')({
     client: 'pg',
     connection: {
@@ -32,7 +31,7 @@ describe('persistor transaction checks', function () {
             PersistObjectTemplate.performInjections();
 
         })();
-        return Q.all([
+        return Promise.all([
             knex.schema.dropTableIfExists('tx_employee').then(function() {
                 return knex.schema.dropTableIfExists('tx_address');
             }),
@@ -47,7 +46,7 @@ describe('persistor transaction checks', function () {
                 return knex.schema.dropTableIfExists('tx_delete_address');
             }),
             knex.schema.dropTableIfExists('tx_deletewot_employee'),
-            knex(schemaTable).del()
+            knex.schema.dropTableIfExists(schemaTable)
         ]).should.notify(done);
     });
 
