@@ -1117,6 +1117,7 @@ describe('Banking from pgsql Example', function () {
             done(err)
         });
     });
+
     it('Can change things to null', function (done) {
         Customer.getFromPersistWithId(sam._id, {roles: true, referredBy: true}).then (function (customer) {
             customer.firstName = null;
@@ -1132,6 +1133,7 @@ describe('Banking from pgsql Example', function () {
             done(e)
         })
     });
+
     it('cascadeSave with transaction', function () {
         writing = true;
         var txn = PersistObjectTemplate.begin();
@@ -1145,6 +1147,7 @@ describe('Banking from pgsql Example', function () {
             throw e;
         })
     });
+
     it('cascadeSave without transaction', function () {
         writing = true;
         var txn = PersistObjectTemplate.begin();

@@ -121,7 +121,7 @@ describe('persistor transaction checks', function () {
             expect(employee.homeAddress).is.equal(null);
         });
     });
-    
+
     it('check basic fetch with fetch spec should return the records', function () {
         return Employee.getFromPersistWithId(empId, { homeAddress: {fetch: {phone: true}}}).then(function(employee) {
             expect(employee.homeAddress._id).is.equal(addressId);
@@ -166,7 +166,7 @@ describe('persistor transaction checks', function () {
         phone1.setDirty(tx);
         return PersistObjectTemplate.end(tx).then(function() {
             return Employee.countFromPersistWithQuery().then(function(count) {
-               expect(count).to.equal(2);
+                expect(count).to.equal(2);
             });
         });
     });

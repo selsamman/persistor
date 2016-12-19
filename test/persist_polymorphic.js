@@ -543,6 +543,7 @@ describe('type mapping tests for parent/child relations', function () {
             ]);
         })
     });
+
     it('When trying to create child table, system should create the parent table and the corresonding indexes in the object graph must be added to the table', function () {
         return PersistObjectTemplate.createKnexTable(ChildToCreate1).then(function () {
             return knex.schema.table('ChildCreatesThisParent1', function (table) {
@@ -550,11 +551,13 @@ describe('type mapping tests for parent/child relations', function () {
             }).should.eventually.have.property('command')
         })
     });
+
     it('Creating a parent with children defined with multilevel inheritance', function () {
         return PersistObjectTemplate.createKnexTable(ParentMulteLevel1).then(function () {
             return PersistObjectTemplate.checkForKnexColumnType(ParentMulteLevel1, 'ScdLevel').should.eventually.equal('boolean');
         })
     });
+
     it('Multilevel inheritance with indexes defined at different levels', function () {
         return PersistObjectTemplate.createKnexTable(ParentMulteLevelIndx1).then(function () {
             return knex.schema.table('ParentMulteLevelIndx1', function (table) {
@@ -567,6 +570,7 @@ describe('type mapping tests for parent/child relations', function () {
             return PersistObjectTemplate.checkForKnexTable(ParentWithMultiChildAttheSameLevel).should.eventually.equal(true);
         })
     });
+
     it('Multilevel inheritance with multiple children at the multiple levels', function () {
         return PersistObjectTemplate.createKnexTable(Scenario_2_ParentWithMultiChildAttheSameLevel).then(function () {
             return PersistObjectTemplate.checkForKnexTable(Scenario_2_ParentWithMultiChildAttheSameLevel).should.eventually.equal(true);

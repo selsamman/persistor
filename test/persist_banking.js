@@ -232,7 +232,6 @@ var schema = {
 }
 
 var MongoClient = require('mongodb-bluebird');
-var Q = require('Q');
 var db;
 
 function clearCollection(collectionName) {
@@ -317,6 +316,7 @@ describe('Banking Example', function () {
             'firstName': 'custForSavePojo',
             'lastName': 'lastName'}, 1)
     });
+
     it('calling savePojoToMongo with null as pojo, ', function() {
         var custForSavePojo = new Customer();
 
@@ -349,6 +349,7 @@ describe('Banking Example', function () {
             done();
         }).catch(function(e) {done(e)});
     });
+
     it('Accounts have addresses', function (done) {
         Account.getFromPersistWithQuery(null, {address: true}).then (function (accounts) {
             expect(accounts.length).to.equal(2);
@@ -358,6 +359,7 @@ describe('Banking Example', function () {
             done(e)
         })
     });
+
     it('Can find debits and credits >= 200 with a $in', function (done) {
         Transaction.getFromPersistWithQuery({type: {$in: ['debit', 'credit']}, amount:{'$gte': 200}}).then (function (transactions) {
             expect(transactions.length).to.equal(1);
@@ -367,6 +369,7 @@ describe('Banking Example', function () {
             done(e)
         })
     });
+
     it('Can find debits and credits >= 200 with a $in', function (done) {
         Transaction.getFromPersistWithQuery({type: {$in: ['debit', 'credit']}, amount:{'$in': [200, 100], $gt: 100}}).then (function (transactions) {
             expect(transactions.length).to.equal(1);

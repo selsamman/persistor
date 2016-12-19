@@ -1,3 +1,5 @@
+/*eslint-disable no-unused-vars*/
+//need to disable this rule as the template definitions for testing are not being used
 var chai = require('chai'),
     expect = require('chai').expect;
 
@@ -200,6 +202,6 @@ describe('persistor transaction checks', function () {
             expect(e.message).to.equal('Missing schema entry for ManagerMainTemplate');
         }
     });
-
-
 });
+
+/*eslint-enable no-unused-vars*/

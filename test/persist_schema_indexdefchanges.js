@@ -251,17 +251,21 @@ describe('index synchronization checks', function () {
             return checkKeyExistsInSchema('ExtendParent').should.eventually.equal(false);
         })
     });
+
     it('synchronize the index definition and check if the index exists on the table by dropping the index', function () {
         return  PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).should.eventually.have.property('command').that.match(/INSERT/);
     });
+
     it('calling synchronizeKnexTableFromTemplate without any changes to the schema definitions..', function () {
         return  PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).should.eventually.be.fulfilled;
     });
+
     it('synchronize the index definition for a new table and leave it in the schema table..', function () {
         return  PersistObjectTemplate.synchronizeKnexTableFromTemplate(MultipleIndexTable).then(function() {
             return checkKeyExistsInSchema('MultipleIndexTable').should.eventually.equal(true);
         })
     });
+
     it('remove the existing index definition, system should delete the index', function () {
         return PersistObjectTemplate.synchronizeKnexTableFromTemplate(IndexSyncTable).then(function () {
             schema.IndexSyncTable.indexes = [];
@@ -270,6 +274,7 @@ describe('index synchronization checks', function () {
             })
         });
     });
+
     it('adding an index should upddate the table again..', function () {
         schema.IndexSyncTable.indexes = [
             {
@@ -284,6 +289,7 @@ describe('index synchronization checks', function () {
             return getIndexes('IndexSyncTable').should.eventually.have.length(1);
         });
     });
+
     it('adding an index should upddate the table again..', function () {
         schema.IndexSyncTable.indexes = [
             {

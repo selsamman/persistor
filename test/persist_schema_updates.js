@@ -219,8 +219,6 @@ describe('index synchronization checks', function () {
         }).should.notify(done);
     });
 
-
-
     it('change to incompatible type and check for exception', function () {
         return knex.schema.createTableIfNotExists('ChangeFieldTypeTable', function (table) {
             table.integer('id');
@@ -230,13 +228,11 @@ describe('index synchronization checks', function () {
         });
     });
 
-
     it('create a table for extended object', function () {
         return PersistObjectTemplate.createKnexTable(ExtendParent).then(function() {
             return PersistObjectTemplate.checkForKnexTable(Parent).should.eventually.equal(true);
         })
     });
-
 
     it('create a table with a boolean field', function () {
         return PersistObjectTemplate.createKnexTable(BoolTable).then(function () {
