@@ -45,6 +45,9 @@ describe('persistor transaction checks', function () {
             knex.schema.dropTableIfExists('tx_delete_employee').then(function() {
                 return knex.schema.dropTableIfExists('tx_delete_address');
             }),
+            knex.schema.dropTableIfExists('tx_persistdelete_address').then(function() {
+                return knex.schema.dropTableIfExists('tx_persistdelete_employee');
+            }),
             knex.schema.dropTableIfExists('tx_deletewot_employee'),
             knex.schema.dropTableIfExists(schemaTable)
         ]).should.notify(done);
@@ -415,14 +418,14 @@ describe('persistor transaction checks', function () {
             employee: {id: 'employee_id'}
         };
 
-        var AddressCascadeSaveWithTouchTop = PersistObjectTemplate.create('AddressCascadeSaveWithTouchTop', {
-            employee: {type: EmployeeCascadeSaveWithTouchTop}
-        });
+        var AddressCascadeSaveWithTouchTop = PersistObjectTemplate.create('AddressCascadeSaveWithTouchTop', {});
 
         var EmployeeCascadeSaveWithTouchTop = PersistObjectTemplate.create('EmployeeCascadeSaveWithTouchTop', {
             addresses: {type: Array, of: AddressCascadeSaveWithTouchTop, value: []}
         });
-
+        AddressCascadeSaveWithTouchTop.mixin({
+            employee: {type: EmployeeCascadeSaveWithTouchTop}
+        })
 
         var txn = PersistObjectTemplate.begin();
         var emp = new EmployeeCascadeSaveWithTouchTop();
@@ -442,9 +445,75 @@ describe('persistor transaction checks', function () {
 
 
         return Promise.all(promises).then(function() {
-            return emp.cascadeSave(txn);
+            emp.cascadeSave(txn);
+            return PersistObjectTemplate.end(txn);
         }).catch(function(e) {
             expect(e.message).to.contain('Missing children entry for addresses');
         })
     });
+
+    it('calling persist delete with transaction', function () {
+        schema.EmployeePersistDelete = {};
+        schema.AddressPersistDelete  = {};
+        schema.EmployeePersistDelete .table = 'tx_persistdelete_employee';
+        schema.AddressPersistDelete .table = 'tx_persistdelete_address';
+        schema.EmployeePersistDelete .cascadeSave = true;
+
+
+        schema.EmployeePersistDelete.children = {
+            addresses: {id: 'employee_id'}
+        };
+        schema.AddressPersistDelete.parents = {
+            employee: {id: 'employee_id'}
+        };
+
+        var AddressPersistDelete  = PersistObjectTemplate.create('AddressPersistDelete', {});
+
+        var EmployeePersistDelete  = PersistObjectTemplate.create('EmployeePersistDelete', {
+            addresses: {type: Array, of: AddressPersistDelete, value: []}
+        });
+
+        AddressPersistDelete.mixin({
+            employee: {type: EmployeePersistDelete }
+        });
+
+
+        var txn = PersistObjectTemplate.begin();
+        var emp = new EmployeePersistDelete();
+        var add1 = new AddressPersistDelete();
+        var add2 = new AddressPersistDelete();
+        add1.employee = emp;
+        add2.employee = emp;
+        emp.addresses.push(add1);
+        emp.addresses.push(add2);
+
+        PersistObjectTemplate.performInjections();
+        PersistObjectTemplate._verifySchema();
+        emp.setDirty(txn, false, true);
+
+        var promises = [PersistObjectTemplate.synchronizeKnexTableFromTemplate(EmployeePersistDelete),
+            PersistObjectTemplate.synchronizeKnexTableFromTemplate(AddressPersistDelete)];
+
+
+        return Promise.all(promises)
+            .then(function() {
+                emp.cascadeSave(txn);
+                return PersistObjectTemplate.end(txn);
+            }).then(function() {
+                return knex.raw('ALTER TABLE public.tx_persistdelete_address ADD CONSTRAINT fk_tx_delete_employee_address2persistdelete FOREIGN KEY (employee_id) references public.tx_persistdelete_employee("_id") deferrable initially deferred');
+            }).then(checkPersistDeletes.bind(this));
+
+        function checkPersistDeletes() {
+            var txn = PersistObjectTemplate.begin();
+            txn.preSave = function (txn) {
+                emp.persistDelete(txn);
+                add1.persistDelete(txn);
+                add2.persistDelete(txn);
+            };
+
+            return PersistObjectTemplate.end(txn);
+        }
+    });
+
+
 });

@@ -312,4 +312,31 @@ describe('persistor transaction checks', function () {
         });
     });
 
+    it('calling persist delete with transaction', function () {
+        var emp, add;
+        return createFKs()
+            .then(loadEmployee.bind(this))
+            .then(setTestObjects.bind(this))
+            .then(realTest.bind(this));
+
+        function loadEmployee() {
+            return Employee.fetchById(empId, {fetch: {homeAddress: true}})
+        }
+
+        function setTestObjects(employee) {
+            emp = employee;
+            add = employee.homeAddress;
+        }
+        function realTest() {
+            var tx =  PersistObjectTemplate.beginTransaction();
+            add.delete({transaction: tx});
+            emp.delete({transaction: tx});
+            return PersistObjectTemplate.commit(tx)
+        }
+
+        function createFKs() {
+            return knex.raw('ALTER TABLE public.tx_employee ADD CONSTRAINT fk_tx_employee_address FOREIGN KEY (address_id) references public.tx_address("_id") deferrable initially deferred');
+        }
+    });
+
 });
