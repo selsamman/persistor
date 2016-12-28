@@ -311,6 +311,7 @@ describe('Banking from pgsql Example', function () {
             .then(function () {
                 knex = require('knex')({
                     client: 'pg',
+                    debug: true,
                     connection: {
                         host     : '127.0.0.1',
                         database : 'persistor_banking',
@@ -362,23 +363,23 @@ describe('Banking from pgsql Example', function () {
     var samsAccount;
     var jointAccount;
 
-    it ('setDirty with cascadeSave in the schema definition', function () {
-        var cascadeObj = new CascadeSaveCheck();
-        cascadeObj.arrayOfFirstLevel = [];
-        var obj1 = new FirstLevel();
-        obj1.cascadeCheck = cascadeObj;
-        var obj2 = new FirstLevel();
-        obj2.cascadeCheck = cascadeObj;
-        cascadeObj.arrayOfFirstLevel.push(obj1);
-        cascadeObj.arrayOfFirstLevel.push(obj2);
-
-        var txn = PersistObjectTemplate.begin();
-        cascadeObj.setDirty(txn, true, true);
-
-        return PersistObjectTemplate.end(txn).then(function(txnStatus) {
-            expect(txnStatus).to.equal(true);
-        });
-    });
+    // it ('setDirty with cascadeSave in the schema definition', function () {
+    //     var cascadeObj = new CascadeSaveCheck();
+    //     cascadeObj.arrayOfFirstLevel = [];
+    //     var obj1 = new FirstLevel();
+    //     obj1.cascadeCheck = cascadeObj;
+    //     var obj2 = new FirstLevel();
+    //     obj2.cascadeCheck = cascadeObj;
+    //     cascadeObj.arrayOfFirstLevel.push(obj1);
+    //     cascadeObj.arrayOfFirstLevel.push(obj2);
+    //
+    //     var txn = PersistObjectTemplate.begin();
+    //     cascadeObj.setDirty(txn, true, true);
+    //
+    //     return PersistObjectTemplate.end(txn).then(function(txnStatus) {
+    //         expect(txnStatus).to.equal(true);
+    //     });
+    // });
 
     it ('can create the data', function () {
         // Setup customers and addresses

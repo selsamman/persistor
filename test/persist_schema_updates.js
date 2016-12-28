@@ -165,7 +165,7 @@ var schema = {
 
 var schemaTable = 'index_schema_history';
 
-describe('index synchronization checks', function () {
+describe('schema update checks', function () {
     var knex = require('knex')({
         client: 'pg',
         connection: {
