@@ -245,9 +245,9 @@ var schema = {
     Account: {
         documentOf: 'pg/account',
         children: {
-            roles: {id: 'account_id'},
-            transactions: {id: 'account_id', fetch: true},
-            fromAccountTransactions: {id: 'from_account_id'}
+            roles: {id: 'account_id', fetch: false},
+            transactions: {id: 'account_id', fetch: false},
+            fromAccountTransactions: {id: 'from_account_id', fetch: false}
         },
         parents: {
             address: {id: 'address_id', fetch: true}
@@ -444,7 +444,7 @@ describe('Banking from pgsql Example', function () {
         }).catch(function(e) {done(e)});
     });
     it('Accounts have addresses', function (done) {
-        Account.getFromPersistWithQuery(null, {address: true}).then (function (accounts) {
+        Account.getFromPersistWithQuery(null, {address: true, transactions: false, fromAccountTransactions: false}).then (function (accounts) {
             expect(accounts.length).to.equal(2);
             expect(accounts[0].address.__template__.__name__).to.equal('Address');
             expect(accounts[0].number).to.equal(123412341234123);

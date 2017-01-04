@@ -10,7 +10,8 @@
         "mongodb-bluebird": "x",
         "bluebird": "x",
         "knex": "*",
-        "pg":"*"
+        "pg":"*",
+        "tv4": "^1.2.7"
     },
     "devDependencies": {
         "chai": "3.x",

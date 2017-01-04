@@ -142,12 +142,13 @@ describe('persistor transaction checks', function () {
 
             function createRecords() {
                 var tx =  PersistObjectTemplate.beginDefaultTransaction();
-                emp.save({transaction: tx, cascade: false});
-                return PersistObjectTemplate.commit(tx).then(function() {
-                    empId = emp._id;
-                    addressId = add._id;
-                    phoneId = phone._id;
-                });
+                return emp.persist({transaction: tx, cascade: false}).then(function(){
+                    return PersistObjectTemplate.commit({transaction: tx}).then(function() {
+                        empId = emp._id;
+                        addressId = add._id;
+                        phoneId = phone._id;
+                    });
+                })
             }
         }
     });
@@ -196,20 +197,62 @@ describe('persistor transaction checks', function () {
     });
 
     it('fetch without fetch spec should not return the records', function () {
-        return Employee.fetch({_id: empId}, {fetch: {homeAddress: false}}).then(function(employee) {
+        return Employee.fetchByQuery({_id: empId}, {fetch: {homeAddress: false}}).then(function(employee) {
             expect(employee[0].homeAddress).is.equal(null);
+        }).catch(function(err) {
+            expect(err).not.equal(null);
         });
     });
 
-    it('fetch with fetch spec should not return the records', function () {
-        return Employee.fetch({_id: empId},  {fetch: {homeAddress: true}, logger: PersistObjectTemplate.logger, start: 0, limit: 5, order: {name: 1} }).then(function(employee) {
+    it('fetch with fetch spec should return the records', function () {
+        return Employee.fetchByQuery({_id: empId},  {fetch: {homeAddress: true}, logger: PersistObjectTemplate.logger, start: 0, limit: 5, order: {name: 1} }).then(function(employee) {
             expect(employee[0].homeAddress._id).is.equal(addressId);
             expect(employee[0].homeAddress.phone).is.equal(null);
         });
     });
 
+    it('fetchByQuery to check the fetchSpec cache', function () {
+        return Employee.fetchByQuery({_id: empId}, {
+            fetch: {
+                roles: true
+            }
+        }).then(function () {
+            expect(Object.keys(PersistObjectTemplate._validFetchSpecs.Employee).length).is.equal(1);
+        })
+    });
+
+    it('fetchByQuery to check the fetchSpec cache', function () {
+        return Employee.fetchByQuery({_id: empId}, {
+            fetch: {
+                name: true
+            }
+        }).catch(function (error) {
+            expect(error).is.not.equal(null);
+        })
+    });
+
+    it('Multiple fetch calls to check the validFetchSpec cache', function () {
+        return Employee.fetchById(empId, {fetch: {homeAddress: false}})
+        .then(function(employee) {
+            expect(PersistObjectTemplate._validFetchSpecs).is.not.equal(null);
+            return employee.fetchReferences({fetch: { homeAddress: {fetch: {phone: true}}, roles: true}}).then(function(obj) {
+                expect(Object.keys(PersistObjectTemplate._validFetchSpecs.Employee).length).is.equal(2);
+            })
+        });
+    });
+
+    it('Multiple fetch calls with the same fetch string to check the validFetchSpec cache', function () {
+        return Employee.fetchById(empId, {fetch: {homeAddress: false}})
+            .then(function(employee) {
+                expect(PersistObjectTemplate._validFetchSpecs).is.not.equal(null);
+                return Employee.fetchById(empId, {fetch: {homeAddress: false}}).then(function(obj) {
+                    expect(Object.keys(PersistObjectTemplate._validFetchSpecs.Employee).length).is.equal(1);
+                });
+            });
+    });
+
     it('fetch with fetch with multiple levels should return the records', function () {
-        return Employee.fetch({_id: empId}, {fetch: { homeAddress: {fetch: {phone: false}}, roles: true}, logger: PersistObjectTemplate.logger}, 0, 5, true, {}, {customOptions: 'custom'}).then(function(employee) {
+        return Employee.fetchByQuery({_id: empId}, {fetch: { homeAddress: {fetch: {phone: false}}, roles: true}, logger: PersistObjectTemplate.logger}, 0, 5, true, {}, {customOptions: 'custom'}).then(function(employee) {
             expect(employee[0].homeAddress._id).is.equal(addressId);
             expect(employee[0].homeAddress.phone).is.equal(null);
         });
@@ -225,7 +268,7 @@ describe('persistor transaction checks', function () {
     it('fetchByQuery with fetch spec should return the records and also load the child objects in the calling object', function () {
         return Employee.fetchById(empId, {fetch: {homeAddress: false}})
             .then(function(employee) {
-                return employee.fetchByQuery({fetch: { homeAddress: {fetch: {phone: true}}, roles: true}}).then(function(obj) {
+                return employee.fetchReferences({fetch: { homeAddress: {fetch: {phone: true}}, roles: true}}).then(function(obj) {
                     expect(obj.homeAddress._id).is.equal(addressId);
                     expect(employee.homeAddress._id).is.equal(addressId);
                 })
@@ -244,12 +287,14 @@ describe('persistor transaction checks', function () {
         emp1.homeAddress = add1;
 
         var tx =  PersistObjectTemplate.beginDefaultTransaction();
-        emp1.save({transaction: tx, cascade: false});
-        return PersistObjectTemplate.commit().then(function() {
-            return Address.countFromPersistWithQuery().then(function(count) {
-                expect(count).to.equal(2);
+        return emp1.persist({transaction: tx, cascade: false}).then(function() {
+            return PersistObjectTemplate.commit().then(function() {
+                return Address.countFromPersistWithQuery().then(function(count) {
+                    expect(count).to.equal(2);
+                });
             });
-        });
+        })
+
     });
 
     it('using beginTransaction will not set the objects as dirty in default trasaction', function () {
@@ -264,12 +309,23 @@ describe('persistor transaction checks', function () {
         emp1.homeAddress = add1;
 
         var tx =  PersistObjectTemplate.beginTransaction();
-        emp1.save({transaction: tx, cascade: false});
-        return PersistObjectTemplate.commit().then(function() {
-            return Address.countFromPersistWithQuery().then(function(count) {
-                expect(count).to.equal(1);
+        return emp1.persist({transaction: tx, cascade: true}).then(function() {
+            return PersistObjectTemplate.commit().then(function() {
+                return Address.countFromPersistWithQuery().then(function(count) {
+                    expect(count).to.equal(1);
+                });
             });
-        });
+        })
+
+    });
+
+    it('using save with wrong option should throw exception', function () {
+        var emp1 = new Employee();
+        return emp1.persist({transaction: null, cascade: true, unknown: false}).then(function() {
+            throw new Error('should not reach here');
+        }).catch(function(error) {
+            expect(error.message).to.contain('Additional properties not allowed');
+        })
     });
 
     it('using beginTransaction will not set the objects as dirty in default trasaction', function () {
@@ -284,12 +340,13 @@ describe('persistor transaction checks', function () {
         emp1.homeAddress = add1;
 
         var tx =  PersistObjectTemplate.beginTransaction();
-        emp1.save({transaction: tx, cascade: false});
-        return PersistObjectTemplate.commit().then(function() {
-            return Employee.fetch({name: 'RaviNotSaved'}).then(function(employees) {
-                expect(employees.length).to.equal(0);
+        return emp1.persist({transaction: tx, cascade: false}).then(function() {
+            return PersistObjectTemplate.commit().then(function() {
+                return Employee.fetchByQuery({name: 'RaviNotSaved'}).then(function(employees) {
+                    expect(employees.length).to.equal(0);
+                });
             });
-        });
+        })
     });
 
     it('using beginTransaction and passing trasaction object to the commit', function () {
@@ -304,12 +361,13 @@ describe('persistor transaction checks', function () {
         emp1.homeAddress = add1;
 
         var tx =  PersistObjectTemplate.beginTransaction();
-        emp1.save({transaction: tx, cascade: false});
-        return PersistObjectTemplate.commit(tx).then(function() {
-            return Employee.fetch({name: 'RaviNotSaved'}).then(function(employees) {
-                expect(employees.length).to.equal(1);
+        return emp1.persist({transaction: tx, cascade: false}).then(function() {
+            return PersistObjectTemplate.commit({transaction: tx}).then(function() {
+                return Employee.fetchByQuery({name: 'RaviNotSaved'}).then(function(employees) {
+                    expect(employees.length).to.equal(1);
+                });
             });
-        });
+        })
     });
 
     it('calling persist delete with transaction', function () {
@@ -331,12 +389,42 @@ describe('persistor transaction checks', function () {
             var tx =  PersistObjectTemplate.beginTransaction();
             add.delete({transaction: tx});
             emp.delete({transaction: tx});
-            return PersistObjectTemplate.commit(tx)
+            return PersistObjectTemplate.commit({transaction: tx})
         }
 
         function createFKs() {
             return knex.raw('ALTER TABLE public.tx_employee ADD CONSTRAINT fk_tx_employee_address FOREIGN KEY (address_id) references public.tx_address("_id") deferrable initially deferred');
         }
     });
+
+    it('calling delete with transaction', function () {
+        var emp, add;
+        return createFKs()
+            .then(loadEmployee.bind(this))
+            .then(setTestObjects.bind(this))
+            .then(realTest.bind(this));
+
+        function loadEmployee() {
+            return Employee.fetchById(empId, {fetch: {homeAddress: true}})
+        }
+
+        function setTestObjects(employee) {
+            emp = employee;
+            add = employee.homeAddress;
+        }
+        function realTest() {
+            var tx =  PersistObjectTemplate.beginTransaction();
+            add.delete({transaction: tx});
+            emp.delete({transaction: tx});
+            //Employee.deleteByQuery({name: 'ravi'}, {transaction: tx});
+            //Address.deleteByQuery({}, {transaction: tx})
+            return PersistObjectTemplate.commit({transaction: tx});
+        }
+
+        function createFKs() {
+            return knex.raw('ALTER TABLE public.tx_employee ADD CONSTRAINT fk_tx_employee_address FOREIGN KEY (address_id) references public.tx_address("_id") deferrable initially deferred');
+        }
+    });
+
 
 });
