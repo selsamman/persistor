@@ -142,7 +142,7 @@ describe('persistor transaction checks', function () {
 
             function createRecords() {
                 var tx =  PersistObjectTemplate.beginDefaultTransaction();
-                return emp.persist({transaction: tx, cascade: false}).then(function(){
+                return emp.persist({transaction: tx, cascade: false}).then(function() {
                     return PersistObjectTemplate.commit({transaction: tx}).then(function() {
                         empId = emp._id;
                         addressId = add._id;
@@ -221,41 +221,53 @@ describe('persistor transaction checks', function () {
         })
     });
 
-    it('fetchByQuery to check the fetchSpec cache', function () {
-        return Employee.fetchByQuery({_id: empId}, {
-            fetch: {
-                name: true
-            }
-        }).catch(function (error) {
-            expect(error).is.not.equal(null);
-        })
+    it('fetchByQuery without objecttemplate field', function () {
+        return Promise.resolve()
+            .then(actualTest)
+            .catch(function (error) {
+                expect(error).is.not.equal(null);
+            })
+
+        function actualTest() {
+            return Employee.fetchByQuery({_id: empId}, {
+                fetch: {
+                    name: true
+                }
+            })
+        }
+
     });
 
     it('Multiple fetch calls to check the validFetchSpec cache', function () {
         return Employee.fetchById(empId, {fetch: {homeAddress: false}})
         .then(function(employee) {
             expect(PersistObjectTemplate._validFetchSpecs).is.not.equal(null);
-            return employee.fetchReferences({fetch: { homeAddress: {fetch: {phone: true}}, roles: true}}).then(function(obj) {
+            return employee.fetchReferences({fetch: { homeAddress: {fetch: {phone: true}}, roles: true}}).then(function() {
                 expect(Object.keys(PersistObjectTemplate._validFetchSpecs.Employee).length).is.equal(2);
-            })
+            });
         });
     });
 
     it('Multiple fetch calls with the same fetch string to check the validFetchSpec cache', function () {
         return Employee.fetchById(empId, {fetch: {homeAddress: false}})
-            .then(function(employee) {
+            .then(function() {
                 expect(PersistObjectTemplate._validFetchSpecs).is.not.equal(null);
-                return Employee.fetchById(empId, {fetch: {homeAddress: false}}).then(function(obj) {
+                return Employee.fetchById(empId, {fetch: {homeAddress: false}}).then(function() {
                     expect(Object.keys(PersistObjectTemplate._validFetchSpecs.Employee).length).is.equal(1);
                 });
             });
     });
 
     it('fetch with fetch with multiple levels should return the records', function () {
-        return Employee.fetchByQuery({_id: empId}, {fetch: { homeAddress: {fetch: {phone: false}}, roles: true}, logger: PersistObjectTemplate.logger}, 0, 5, true, {}, {customOptions: 'custom'}).then(function(employee) {
-            expect(employee[0].homeAddress._id).is.equal(addressId);
-            expect(employee[0].homeAddress.phone).is.equal(null);
-        });
+        return Employee.fetchByQuery({_id: empId}, {
+            fetch: { homeAddress: {fetch: {phone: false}},
+                roles: true},
+            logger: PersistObjectTemplate.logger
+        }, 0, 5, true, {}, {customOptions: 'custom'})
+            .then(function(employee) {
+                expect(employee[0].homeAddress._id).is.equal(addressId);
+                expect(employee[0].homeAddress.phone).is.equal(null);
+            });
     });
 
     it('fetchById with multiple level fetch spec should return the records', function () {
@@ -321,11 +333,18 @@ describe('persistor transaction checks', function () {
 
     it('using save with wrong option should throw exception', function () {
         var emp1 = new Employee();
-        return emp1.persist({transaction: null, cascade: true, unknown: false}).then(function() {
-            throw new Error('should not reach here');
-        }).catch(function(error) {
-            expect(error.message).to.contain('Additional properties not allowed');
-        })
+        return Promise.resolve()
+            .then(actualTest)
+            .catch(function(error) {
+                expect(error.message).to.contain('Additional properties not allowed');
+            });
+
+        function actualTest() {
+            return emp1.persist({transaction: null, cascade: true, unknown: false}).then(function() {
+                throw new Error('should not reach here');
+            })
+        }
+
     });
 
     it('using beginTransaction will not set the objects as dirty in default trasaction', function () {
