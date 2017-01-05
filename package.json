@@ -5,7 +5,7 @@
     "version": "1.4.3",
     "dependencies": {
         "q": "1.x",
-        "supertype": "file:../supertype",
+        "supertype": "git://github.com/nikmash/supertype.git",
         "underscore": "1.x",
         "mongodb-bluebird": "x",
         "bluebird": "x",
