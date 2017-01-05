@@ -406,8 +406,8 @@ describe('persistor transaction checks', function () {
         }
         function realTest() {
             var tx =  PersistObjectTemplate.beginTransaction();
-            add.delete({transaction: tx});
-            emp.delete({transaction: tx});
+            add.deleteV2({transaction: tx});
+            emp.deleteV2({transaction: tx});
             return PersistObjectTemplate.commit({transaction: tx})
         }
 
