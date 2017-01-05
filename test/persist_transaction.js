@@ -424,7 +424,7 @@ describe('persistor transaction checks', function () {
             addresses: {type: Array, of: AddressCascadeSaveWithTouchTop, value: [], comment: 'ravi type check1'}
         });
         AddressCascadeSaveWithTouchTop.mixin({
-            employee: {type: EmployeeCascadeSaveWithTouchTop,  comment: 'ravi type check2'}
+            employee: {type: EmployeeCascadeSaveWithTouchTop, comment: 'append the comment'}
         })
 
         var txn = PersistObjectTemplate.begin();
