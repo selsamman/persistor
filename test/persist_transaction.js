@@ -424,7 +424,7 @@ describe('persistor transaction checks', function () {
             addresses: {type: Array, of: AddressCascadeSaveWithTouchTop, value: [], comment: 'ravi type check1'}
         });
         AddressCascadeSaveWithTouchTop.mixin({
-            employee: {type: EmployeeCascadeSaveWithTouchTop, comment: 'append the comment'}
+            employee: {type: EmployeeCascadeSaveWithTouchTop, comment: 'comment to include'}
         })
 
         var txn = PersistObjectTemplate.begin();
@@ -446,7 +446,13 @@ describe('persistor transaction checks', function () {
 
         return Promise.all(promises).then(function() {
             emp.cascadeSave(txn);
+        }).then(function() {
             return PersistObjectTemplate.end(txn);
+        }).then(function() {
+            return knex.raw('select description from pg_description join pg_class on pg_description.objoid = pg_class.oid where relname = \'tx_cascadetouch_address\' and  description like \'%comment to include%\'');
+        }).then(function(columnDef) {
+            expect(columnDef.rows.length).is.equal(1)
+            console.log('testing');
         }).catch(function(e) {
             expect(e.message).to.contain('Missing children entry for addresses');
         })
