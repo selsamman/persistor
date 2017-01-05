@@ -433,11 +433,13 @@ describe('persistor transaction checks', function () {
         }
         function realTest() {
             var tx =  PersistObjectTemplate.beginTransaction();
-            add.delete({transaction: tx});
-            emp.delete({transaction: tx});
-            //Employee.deleteByQuery({name: 'ravi'}, {transaction: tx});
-            //Address.deleteByQuery({}, {transaction: tx})
-            return PersistObjectTemplate.commit({transaction: tx});
+            Employee.deleteByQuery({name: 'Ravi'}, {transaction: tx});
+            Address.deleteByQuery({city: 'New York'}, {transaction: tx})
+            return PersistObjectTemplate.commit({transaction: tx}).then(function() {
+                return Employee.fetchByQuery({name: 'Ravi'}).then(function(employees) {
+                    expect(employees.length).to.equal(0);
+                })
+            });
         }
 
         function createFKs() {
