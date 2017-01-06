@@ -10,19 +10,18 @@
         "mongodb-bluebird": "x",
         "bluebird": "x",
         "knex": "*",
-        "pg":"*"
+        "pg":"*",
+        "tv4": "^1.2.7"
     },
     "devDependencies": {
         "chai": "3.x",
         "chai-as-promised": "^5.1.0",
         "istanbul": "0.4.5",
         "mocha": "^3.1.2",
-        "eslint": "3.7.x",
         "sinon": "1.15.x",
-        "sinon-chai": "2.8.x"
-    },
-    "scripts": {
-        "test": "istanbul cover _mocha -- test/* -R spec"
+        "sinon-chai": "2.8.x",
+        "mock-fs": "3.6.x",
+        "eslint": "3.7.x"
     },
     "directories": {
     },
@@ -32,6 +31,12 @@
     "repository": {
         "type": "git",
             "url": "git://github.com/selsamman/persistor.git"
+    },
+    "scripts": {
+        "lint": "eslint .",
+        "test": "istanbul cover _mocha -- test/* -R spec",
+        "test:config": "mocha test/config",
+        "test:example": "mocha test/example"
     },
     "bugs": {
         "url": "http://github.com/selsamman/persistor/issues"
