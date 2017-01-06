@@ -449,10 +449,12 @@ describe('persistor transaction checks', function () {
         }).then(function() {
             return PersistObjectTemplate.end(txn);
         }).then(function() {
-            return knex.raw('select description from pg_description join pg_class on pg_description.objoid = pg_class.oid where relname = \'tx_cascadetouch_address\' and  description like \'%comment to include%\'');
+            var sql = 'select description from pg_description ' +
+                'join pg_class on pg_description.objoid = pg_class.oid where relname = \'tx_cascadetouch_address\' ' +
+                'and  description like \'%comment to include%\'';
+            return knex.raw(sql);
         }).then(function(columnDef) {
-            expect(columnDef.rows.length).is.equal(1)
-            console.log('testing');
+            expect(columnDef.rows.length).is.equal(1);
         }).catch(function(e) {
             expect(e.message).to.contain('Missing children entry for addresses');
         })

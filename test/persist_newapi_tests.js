@@ -417,20 +417,14 @@ describe('persistor transaction checks', function () {
     });
 
     it('calling delete with transaction', function () {
-        var emp, add;
         return createFKs()
             .then(loadEmployee.bind(this))
-            .then(setTestObjects.bind(this))
             .then(realTest.bind(this));
 
         function loadEmployee() {
             return Employee.fetchById(empId, {fetch: {homeAddress: true}})
         }
 
-        function setTestObjects(employee) {
-            emp = employee;
-            add = employee.homeAddress;
-        }
         function realTest() {
             var tx =  PersistObjectTemplate.beginTransaction();
             Employee.deleteByQuery({name: 'Ravi'}, {transaction: tx});
