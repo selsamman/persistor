@@ -515,11 +515,10 @@ describe('type mapping tests for parent/child relations', function () {
             PersistObjectTemplate.dropKnexTable(ParentWithMultiChildAttheSameLevelWithIndexes),
             PersistObjectTemplate.dropKnexTable(parentSynchronize),
             knex.schema.dropTableIfExists('NewTableWithComments'),
-            knex.schema.dropTableIfExists('NewTableWithComments1'),
             knex.schema.dropTableIfExists('ExistingTableWithComments'),
             knex.schema.dropTableIfExists('ExistingTableWithAField'),
-            knex.schema.dropTableIfExists(schemaTable)
-        ]).should.notify(done);
+            knex('index_schema_history').del()
+        ]).should.notify(done);;
     })
 
     it('Parent type with an associated child will add add the fields from the child tables to the parent table', function (done) {
@@ -604,6 +603,7 @@ describe('type mapping tests for parent/child relations', function () {
         return PersistObjectTemplate.synchronizeKnexTableFromTemplate(childSynchronize).then(function () {
             return PersistObjectTemplate.checkForKnexTable(parentSynchronize).should.eventually.equal(true).then(function() {
                 schema.childSynchronize.indexes = JSON.parse('[{"name": "scd_index","def": {"columns": ["name"],"type": "unique"}}]');
+
                 return PersistObjectTemplate.synchronizeKnexTableFromTemplate(childSynchronize);
             })
         })
@@ -686,14 +686,14 @@ describe('type mapping tests for parent/child relations', function () {
             }
         })
 
-        schema.ExistingTableWithComments = {documentOf: 'pg/ExistingTableWithComments'};
+        schema.ExistingTableWithComments = {documentOf: "pg/ExistingTableWithComments"};
         PersistObjectTemplate._verifySchema();
-        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(ExistingTableWithComments).then(function () {
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(ExistingTableWithComments).then(function (status) {
             ExistingTableWithComments.mixin({
                 name: {type: String, value: 'Test Parent', comment:    'comment on an existing table'}
             });
             PersistObjectTemplate._verifySchema();
-            return PersistObjectTemplate.synchronizeKnexTableFromTemplate(ExistingTableWithComments).then(function () {
+            return PersistObjectTemplate.synchronizeKnexTableFromTemplate(ExistingTableWithComments).then(function (status) {
                 return knex('pg_catalog.pg_description')
                     .count()
                     .where('description', 'like', '%comment on an existing table%')
@@ -704,8 +704,8 @@ describe('type mapping tests for parent/child relations', function () {
 
     });
 
-    it('Adding a new field with comment to an existing table', function () {
-        var ExistingTableWithAField = PersistObjectTemplate.create('ExistingTableWithAField', {
+    it("Adding a new field with comment to an existing table", function () {
+        var ExistingTableWithAField = PersistObjectTemplate.create("ExistingTableWithAField", {
             id: {type: Number},
             name: {type: String, value: 'Test Parent'},
             init: function (id, name) {
@@ -714,9 +714,9 @@ describe('type mapping tests for parent/child relations', function () {
             }
         });
 
-        schema.ExistingTableWithAField = {documentOf: 'pg/ExistingTableWithAField'};
+        schema.ExistingTableWithAField = {documentOf: "pg/ExistingTableWithAField"};
         PersistObjectTemplate._verifySchema();
-        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(ExistingTableWithAField).then(function () {
+        return PersistObjectTemplate.synchronizeKnexTableFromTemplate(ExistingTableWithAField).then(function (status) {
             ExistingTableWithAField.mixin({
                 newField: {type: String, value: 'Test Parent', comment:    'Adding a new field comment'}
             });
