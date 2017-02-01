@@ -1,3 +1,5 @@
+## 1.4.4
+* Added an error throw when we hit an object reference that has an __id__ but no __template__
 ## 1.4.3
 * Create table comments in Postgres on new tables as well as modifications
 ## 1.4.2
