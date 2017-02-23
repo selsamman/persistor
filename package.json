@@ -5,7 +5,7 @@
     "version": "2.1.0",
     "dependencies": {
         "q": "1.x",
-        "supertype": "2.1.*",
+        "supertype": "https://github.com/selsamman/supertype.git#2a56447",
         "underscore": "1.x",
         "mongodb-bluebird": "x",
         "bluebird": "x",
@@ -21,7 +21,14 @@
         "sinon": "1.15.x",
         "sinon-chai": "2.8.x",
         "mock-fs": "3.6.x",
-        "eslint": "3.7.x"
+        "eslint": "3.7.x",
+        "@types/chai": "^3.4.34",
+        "@types/mocha": "^2.2.39",
+        "@types/node": "^7.0.5",
+        "@types/q": "*",
+        "@types/underscore": "*",
+        "typescript": "^2.1.6"
+
     },
     "directories": {
     },
