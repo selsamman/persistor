@@ -35,8 +35,7 @@ export class Credit extends Transaction {
 }
 
 export class Xfer extends Transaction {
-
-    @property({fetch: true})
+    @property({fetch: true, getType: () => {return Account}})
     fromAccount: Account;
 
     constructor (account, type, amount, fromAccount) {

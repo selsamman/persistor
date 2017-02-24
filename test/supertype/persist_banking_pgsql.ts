@@ -24,6 +24,7 @@ import {Address} from "./Address";
 import {Transaction, Debit, Credit, Xfer} from './Transaction';
 
 
+
 var schema = {
     Customer: {
         documentOf: 'pg/customer',
@@ -170,6 +171,7 @@ describe('Banking from pgsql Example', function () {
     var jointAccount;
 
 
+
     it ('can create the data', function () {
         // Setup customers and addresses
         sam = new Customer('Sam', 'M', 'Elsamman');
@@ -222,6 +224,8 @@ describe('Banking from pgsql Example', function () {
             expect(address.street).to.not.equal('');
         })
     });
+
+
     it('can insert', function (done) {
         PersistObjectTemplate.begin();
         sam.setDirty();
@@ -231,9 +235,11 @@ describe('Banking from pgsql Example', function () {
             expect(result).to.equal(true);
             done();
         }).catch(function(e) {done(e)});
+
+
     });
     it('Accounts have addresses', function (done) {
-        Account.getFromPersistWithQuery(null, {address: true, transactions: false, fromAccountTransactions: false}).then (function (accounts) {
+        Account.getFromPersistWithQuery(null, {address: true, roles: true, transactions: false, fromAccountTransactions: false}).then (function (accounts) {
             expect(accounts.length).to.equal(2);
             expect(accounts[0].address.__template__.__name__).to.equal('Address');
             expect(accounts[0].number).to.equal(123412341234123);
@@ -262,12 +268,13 @@ describe('Banking from pgsql Example', function () {
         Customer.getFromPersistWithQuery(null, {primaryAddresses: true, secondaryAddresses: true}).then (function (customers) {
             expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
             customers[1].primaryAddresses.length + customers[1].secondaryAddresses.length +
-            customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(5);
+            customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(4);
             done();
         }).catch(function(e) {
             done(e)
         })
     });
+
     it('Accounts sloppily replace addresses', function (done) {
         sam.primaryAddresses.splice(0, 1);
         sam.addAddress('primary', ['500 East 83d', 'Apt 1E'], 'New York', 'NY', '10028');
@@ -283,16 +290,7 @@ describe('Banking from pgsql Example', function () {
                 done(e)
             })
     });
-    it('Customers have addresses', function (done) {
-        Customer.getFromPersistWithQuery(null, {primaryAddresses: true, secondaryAddresses: true}).then (function (customers) {
-            expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
-                customers[1].primaryAddresses.length + customers[1].secondaryAddresses.length +
-                customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(5);
-            done();
-        }).catch(function(e) {
-            done(e)
-        })
-    });
+
     it('Transactions have accounts fetched', function (done) {
         Xfer.getFromPersistWithQuery({type: 'xfer'}).then (function (transactions) {
             expect(transactions.length).to.equal(2);
@@ -572,8 +570,8 @@ describe('Banking from pgsql Example', function () {
             expect(customer.nullString).to.equal(null);
             expect(customer.nullDate).to.equal(null);
             expect(customer.firstName).to.equal('Sam');
-            expect(customer.local1).to.equal('local1');
-            expect(customer.local2).to.equal('local2');
+            expect(customer.local1).to.equal('foo');
+            expect(customer.local2).to.equal('bar');
             expect(customer.roles[1].relationship).to.equal('primary');
             expect(customer.roles[1].customer).to.equal(customer);
             expect(customer.roles[1].accountPersistor.isFetched).to.equal(false);
@@ -684,7 +682,7 @@ describe('Banking from pgsql Example', function () {
         }).then (function (customers) {
             expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
                 customers[1].primaryAddresses.length + customers[1].secondaryAddresses.length +
-                customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(5);
+                customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(3);
             done();
         })
         .catch(function(e) {

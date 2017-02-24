@@ -31,8 +31,8 @@ export class Account extends Supertype {
     @property()
     title: Array<string>;
 
-    @property({type: Role})
-    roles: Array<Role>;
+    @property({getType: () => {return Role}})
+    roles: Array<Role> = [];
 
     @property({getType: () => {return Address}})
     address: Address;

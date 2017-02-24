@@ -34,7 +34,7 @@ export class Address extends Supertype {
     @property()
     type: string;
 
-    @property({of: ReturnedMail})
+    @property({type: ReturnedMail})
     returnedMail: Array<ReturnedMail> = [];
 
     @property({getType: () => {return Account}})
