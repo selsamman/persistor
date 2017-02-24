@@ -19,10 +19,10 @@ export class Account extends Supertype {
         this.setDirty();
     };
 
-    @property({of: Transaction, fetch: true})
+    @property({type: Transaction, fetch: true})
     transactions: Array<Transaction> = [];
 
-    @property({of: Transaction, fetch: true})
+    @property({type: Transaction, fetch: true})
     fromAccountTransactions: Array<Transaction> = [];
 
     @property()
@@ -31,10 +31,10 @@ export class Account extends Supertype {
     @property()
     title: Array<string>;
 
-    @property({of: Role})
+    @property({type: Role})
     roles: Array<Role>;
 
-    @property()
+    @property({getType: () => {return Address}})
     address: Address;
 
     addCustomer (customer, relationship?) {

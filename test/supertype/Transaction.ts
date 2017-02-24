@@ -18,7 +18,7 @@ export class Transaction  extends Supertype {
     @property()
     type: string;
 
-    @property()
+    @property({getType: () => {return Account}})
     account: Account;
 }
 

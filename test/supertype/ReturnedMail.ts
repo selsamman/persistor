@@ -7,7 +7,7 @@ export class ReturnedMail extends Supertype {
     @property()
     date: Date;
 
-    @property()
+    @property({getType: ()=> {return Address}})
     address: Address;
 
     constructor (address, date)

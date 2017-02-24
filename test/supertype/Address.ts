@@ -2,6 +2,7 @@ import {Supertype, supertypeClass, property} from '../../index';
 import {Customer} from './Customer';
 import {Account} from './Account';
 import {ReturnedMail} from './ReturnedMail';
+import "reflect-metadata";
 
 @supertypeClass
 export class Address extends Supertype {
@@ -12,11 +13,11 @@ export class Address extends Supertype {
         this.setDirty();
     }
 
-    @property()
-    lines: Array<string> = [];
+    @property({type: String})
+    lines: Array<String> = [];
 
     @property()
-    city: string = '';
+    city: String = '';
 
     @property()
     state: string = '';
@@ -27,7 +28,7 @@ export class Address extends Supertype {
     @property()
     country: string = 'US';
 
-    @property()
+    @property({getType: () => {return Customer}})
     customer: Customer;
 
     @property()
@@ -36,7 +37,7 @@ export class Address extends Supertype {
     @property({of: ReturnedMail})
     returnedMail: Array<ReturnedMail> = [];
 
-    @property()
+    @property({getType: () => {return Account}})
     account: Account;
 
     addReturnedMail (date) {

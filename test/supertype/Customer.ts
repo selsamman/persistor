@@ -40,7 +40,7 @@ export class Customer extends Supertype {
     @property()
     nullString: string = null;
 
-    @property({of: Role})
+    @property({type: Role})
     roles:  Array<Role> = [];
 
     @property()
@@ -49,10 +49,10 @@ export class Customer extends Supertype {
     @property()
     type: string = 'primary';
 
-    @property({fetch: true, of: Customer})
+    @property({fetch: true, type: Customer})
     referrers:  Array<Customer>;
 
-    @property({fetch: true, of: Customer})
+    @property({fetch: true, type: Customer})
     secondaryReferrers:  Array<Customer> = [];
 
     addAddress (type, lines, city, state, zip) {
@@ -65,9 +65,9 @@ export class Customer extends Supertype {
         this[type == 'primary' ? 'primaryAddresses' : 'secondaryAddresses'].push(address);
     }
 
-    @property({of: Address, fetch: true})
+    @property({type: Address, fetch: true})
     primaryAddresses: Array<Address> = [];
 
-    @property({of: Address, fetch: true})
+    @property({type: Address, fetch: true})
     secondaryAddresses:  Array<Address> = []
 }

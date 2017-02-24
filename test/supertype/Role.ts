@@ -17,9 +17,9 @@ export class Role extends Supertype {
     @property()
     relationship: string = 'primary';
 
-    @property()
+    @property({getType: () => {return Customer}})
     customer: Customer;
 
-    @property()
-    account: {type: Account}
+    @property({getType: () => {return Account}})
+    account: Account;
 }
