@@ -5,7 +5,7 @@
     "version": "2.1.0",
     "dependencies": {
         "q": "1.x",
-        "supertype": "https://github.com/selsamman/supertype.git#a771f45",
+        "supertype": "https://github.com/selsamman/supertype.git#e9946e2",
         "underscore": "1.x",
         "mongodb-bluebird": "x",
         "bluebird": "x",
