@@ -91,7 +91,8 @@ describe('Banking from pgsql Example', function () {
 
     it('create a simple table', function () {
         return Employee.getFromPersistWithQuery({}, {responsibilities: true}).then (function (employees) {
-            expect(employees.responsibilities.length).to.equal(1);
+            expect(employees[0].responsibilities.length).to.equal(1);
+            expect(employees[1].responsibilities.length).to.equal(1);
         })
     });
 });
