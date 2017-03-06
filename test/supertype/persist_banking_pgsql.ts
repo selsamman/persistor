@@ -269,7 +269,7 @@ describe('Banking from pgsql Example', function () {
         Customer.getFromPersistWithQuery(null, {primaryAddresses: true, secondaryAddresses: true}).then (function (customers) {
             expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
             customers[1].primaryAddresses.length + customers[1].secondaryAddresses.length +
-            customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(4);
+            customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(5);
             done();
         }).catch(function(e) {
             done(e)
@@ -683,7 +683,7 @@ describe('Banking from pgsql Example', function () {
         }).then (function (customers) {
             expect(customers[0].primaryAddresses.length + customers[0].secondaryAddresses.length +
                 customers[1].primaryAddresses.length + customers[1].secondaryAddresses.length +
-                customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(3);
+                customers[2].primaryAddresses.length + customers[2].secondaryAddresses.length).to.equal(5);
             done();
         })
         .catch(function(e) {

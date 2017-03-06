@@ -5,7 +5,7 @@
     "version": "2.1.0",
     "dependencies": {
         "q": "1.x",
-        "supertype": "https://github.com/selsamman/supertype.git#e9946e2",
+        "supertype": "https://github.com/selsamman/supertype.git#f071567",
         "underscore": "1.x",
         "mongodb-bluebird": "x",
         "bluebird": "x",
@@ -28,8 +28,8 @@
         "@types/q": "*",
         "@types/underscore": "*",
         "@types/bluebird": "*",
-        "typescript": "*"
-
+        "typescript": "*",
+        "ts-node": "*"
     },
     "directories": {
     },
@@ -44,7 +44,10 @@
         "lint": "eslint .",
         "test": "istanbul cover _mocha -- test/* -R spec",
         "test:config": "mocha test/config",
-        "test:example": "mocha test/example"
+        "test:example": "mocha test/example",
+        "test:typescript": "mocha --compilers ts:ts-node/register,tsx:ts-node/register test/supertype/persist_banking_pgsql.ts",
+        "test:typescript": "mocha --compilers ts:ts-node/register,tsx:ts-node/register test/supertype/one-to-many-checks.ts"
+
     },
     "bugs": {
         "url": "http://github.com/selsamman/persistor/issues"
