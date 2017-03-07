@@ -118,6 +118,8 @@ function clearCollection(template) {
         throw 'Invalid collection name ' + collectionName;
 }
 
+var schemaTable = 'index_schema_history';
+
 describe('Banking from pgsql Example', function () {
     var knex;
     it ('opens the database Postgres', function () {
@@ -140,7 +142,12 @@ describe('Banking from pgsql Example', function () {
             }).catch(function(e) {throw e;});
     });
     it ('clears the bank', function () {
-        return clearCollection(Role)
+        function dropSchemaDef() {
+            return knex.schema.dropTableIfExists(schemaTable);
+        }
+
+        return dropSchemaDef()
+            .then(clearCollection.bind(this, Role))
             .then(function (count) {
                 expect(count).to.equal(0);
                 return clearCollection(Account)
@@ -965,7 +972,7 @@ describe('Banking from pgsql Example', function () {
 
 
     it('can delete', function (done) {
-        Customer.getFromPersistWithQuery({}, {roles: {fetch: {account: true}}}).then (function (customers) {
+        Customer.getFromPersistWithQuery({}, {roles: {fetch: {account: {fetch: {roles: true}}}}}).then (function (customers) {
             function deleteStuff(txn) {
                 var promises = [];
                 customers.forEach(function(customer) {

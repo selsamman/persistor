@@ -56,34 +56,38 @@ describe('Banking from pgsql Example', function () {
 
             })();
 
+            return cleanDB()
+                .then(createTables.bind(this))
+                .then(prepareData.bind(this));
 
+            function cleanDB() {
+                return Promise.all([
+                    knex.schema.dropTableIfExists('index_schema_history'),
+                    knex.schema.dropTableIfExists('employee'),
+                    knex.schema.dropTableIfExists('responsibility')]);
+            }
 
-            return Promise.all([
-                knex.schema.dropTableIfExists('employee'),
-                knex.schema.dropTableIfExists('responsibility')])
-                .then(function() {
-                    return PersistObjectTemplate.synchronizeKnexTableFromTemplate(Employee)
-                        .then(function() {
-                            return PersistObjectTemplate.synchronizeKnexTableFromTemplate(Responsibility);
-                        })
-                })
-                .then(function() {
+            function createTables() {
+                return Promise.all([
+                    PersistObjectTemplate.synchronizeKnexTableFromTemplate(Employee),
+                    PersistObjectTemplate.synchronizeKnexTableFromTemplate(Responsibility)]);
+            }
 
-                    var ravi = new Employee('Ravi',  'Kumar');
-                    var test = new Employee('Test', 'RTest');
+            function prepareData() {
+                var ravi = new Employee('Ravi',  'Kumar');
+                var test = new Employee('Test', 'RTest');
 
-                    var responsbility1 = new Responsibility('work1', 'doing work');
-                    var responsbility2 = new Responsibility('work2', 'doing work');
-                    ravi.responsibilities.push(responsbility1);
-                    test.responsibilities.push(responsbility2);
+                var responsbility1 = new Responsibility('work1', 'doing work');
+                var responsbility2 = new Responsibility('work2', 'doing work');
+                ravi.responsibilities.push(responsbility1);
+                test.responsibilities.push(responsbility2);
 
-                    return Promise.all([ravi.persistSave(),
-                        test.persistSave(),
-                        responsbility1.persistSave(),
-                        responsbility2.persistSave(),
-                    ]);
-
-                })
+                return Promise.all([ravi.persistSave(),
+                    test.persistSave(),
+                    responsbility1.persistSave(),
+                    responsbility2.persistSave(),
+                ]);
+            }
         });
 
 
