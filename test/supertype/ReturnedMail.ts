@@ -1,8 +1,8 @@
-import {Supertype, supertypeClass, property} from '../../index';
+import {Supertype, supertypeClass, property, Persistable} from '../../index';
 import {Address} from './Address';
 
 @supertypeClass
-export class ReturnedMail extends Supertype {
+export class ReturnedMail extends Persistable(Supertype) {
 
     @property()
     date: Date;

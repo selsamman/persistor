@@ -717,10 +717,10 @@ describe('Banking Example', function () {
     });
 
     it('getDB without setting database', function () {
-        expect(PersistObjectTemplate.persistSaveMongo.bind(this, {})).to.throw('Attempt to save an non-templated Object');
+        expect(PersistObjectTemplate.persistSaveMongo.bind(PersistObjectTemplate, {})).to.throw('Attempt to save an non-templated Object');
         var testWithOutSchema = PersistObjectTemplate.create('testWithOutSchema', {});
         var obj = new testWithOutSchema();
-        expect(PersistObjectTemplate.persistSaveMongo.bind(this, obj)).to.throw('Schema entry missing for testWithOutSchema');
+        expect(PersistObjectTemplate.persistSaveMongo.bind(PersistObjectTemplate, obj)).to.throw('Schema entry missing for testWithOutSchema');
         var schema = {};
         schema.testWithOutSchema = {};
         PersistObjectTemplate.setSchema(schema);
@@ -730,11 +730,11 @@ describe('Banking Example', function () {
 
     it('Loading template from ', function () {
         expect(PersistObjectTemplate.persistSaveMongo.bind(this, {})).to.throw('Attempt to save an non-templated Object');
-        var testWithOutSchema = PersistObjectTemplate.create('testWithOutSchema', {});
+        var testWithOutSchema = PersistObjectTemplate.create('testWithOutSchema2', {});
         var obj = new testWithOutSchema();
-        expect(PersistObjectTemplate.persistSaveMongo.bind(this, obj)).to.throw('Schema entry missing for testWithOutSchema');
+        expect(PersistObjectTemplate.persistSaveMongo.bind(PersistObjectTemplate, obj)).to.throw('Schema entry missing for testWithOutSchema');
         var schema = {};
-        schema.testWithOutSchema = {};
+        schema.testWithOutSchema2 = {};
         PersistObjectTemplate.setSchema(schema);
         PersistObjectTemplate._verifySchema();
         expect(PersistObjectTemplate.persistSaveMongo.bind(PersistObjectTemplate, obj)).to.throw('which subDocument without necessary parent links to reach top level document');

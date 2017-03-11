@@ -401,8 +401,10 @@ describe('schema update checks', function () {
 
     it('without defining the default db alias', function () {
         var WithOutSchema = PersistObjectTemplate.create('WithOutSchema', {});
+        PersistObjectTemplate._injectObjectFunctions(WithOutSchema);
         var obj = new WithOutSchema();
-        expect(obj.persistSave.bind(this)).to.throw('DB Alias __default__ not set');
+        //    obj.persistSave();
+        expect(obj.persistSave.bind(obj)).to.throw('DB Alias __default__ not set');
 
     });
 

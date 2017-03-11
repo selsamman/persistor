@@ -1,8 +1,8 @@
-import {Supertype, supertypeClass, property} from '../../index';
+import {Supertype, supertypeClass, property, Persistable} from '../../index';
 import {Responsibility} from './Responsibility';
 
 @supertypeClass
-export class Employee extends Supertype {
+export class Employee extends Persistable(Supertype) {
     constructor(firstName, lastName) {
         super();
 

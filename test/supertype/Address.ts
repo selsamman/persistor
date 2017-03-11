@@ -1,11 +1,11 @@
-import {Supertype, supertypeClass, property} from '../../index';
+import {Supertype, supertypeClass, property, Persistable} from '../../index';
 import {Customer} from './Customer';
 import {Account} from './Account';
 import {ReturnedMail} from './ReturnedMail';
 import "reflect-metadata";
 
 @supertypeClass
-export class Address extends Supertype {
+export class Address extends Persistable(Supertype) {
 
     constructor (customer) {
         super();

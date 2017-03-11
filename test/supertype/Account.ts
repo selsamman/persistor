@@ -1,10 +1,10 @@
-import {Supertype, supertypeClass, property} from '../../index';
+import {Supertype, supertypeClass, property, Persistable} from '../../index';
 import {Role} from './Role';
 import {Address} from './Address';
 import {Transaction, Debit, Credit, Xfer} from './Transaction';
 
 @supertypeClass
-export class Account extends Supertype {
+export class Account extends Persistable(Supertype) {
 
     constructor (number, title, customer, address) {
         super();
@@ -31,7 +31,7 @@ export class Account extends Supertype {
     @property({type: String})
     title: Array<string>;
 
-    @property({getType: () => {return Role}})
+    @property({getType: () => {return Role}, fetch: true})
     roles: Array<Role> = [];
 
     @property({getType: () => {return Address}})

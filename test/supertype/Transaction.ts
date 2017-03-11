@@ -1,8 +1,8 @@
-import {Supertype, supertypeClass, property} from '../../index';
+import {Supertype, supertypeClass, property, Persistable} from '../../index';
 import {Account} from './Account';
 
 @supertypeClass
-export class Transaction  extends Supertype {
+export class Transaction  extends Persistable(Supertype) {
     constructor (account, type, amount) {
         super()
         this.account = account;
