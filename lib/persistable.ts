@@ -40,13 +40,34 @@ export function Persistable<BC extends Constructable<{}>>(Base: BC) {
 
     return class extends Base {
 
+        // New names
+        static persistorDeleteByQuery(query, options) : any {}
+        static persistorFetchByQuery (query, options) : any {}
+        static persistorCountByQuery (query, options) : any {}
+        static persistorFetchById (id, options) : any {}
+        static persistorIsKnex() : any{}
+        static persistorGetTableName(alias?) : any{}
+        static persistorGetParentKey(prop, alias?) : any{}
+        static persistorGetPrimaryKey(alias?) : any{}
+        static persistorGetChildKey(prop, alias?) : any{}
+        static persistorGetKnex() : any{}
+        static persistorKnexParentJoin(targetTemplate, primaryAlias, targetAlias, joinKey) : any{}
+        static persistorKnexChildJoin(targetTemplate, primaryAlias, targetAlias, joinKey) : any{}
+
+        persistorSave(options?) : any {};
+        persistorRefresh(logger?) : any {}
+        persistorDelete (txn?, logger?) : any {};
+        persistorIsStale () : any {}
+
+        _id: string;
+        persistor : Persistor;
+
+        // Legacy
         static getFromPersistWithId(id?, cascade?, isTransient?, idMap?, isRefresh?, logger?) : any{}
         static getFromPersistWithQuery(query, cascade?, start?, limit?, isTransient?, idMap?, options?, logger?) : any {}
         static deleteFromPersistWithQuery (query, txn?, logger?) : any{}
-        static deleteByQuery(query, options) : any{}
         static deleteFromPersistWithId (id, txn?, logger?) : any{}
         static countFromPersistWithQuery(query?, logger?) : any{}
-        static fetchByQuery (query, options) : any{}
         static getTableName(alias?) : any{}
         static getParentKey(prop, alias?) : any{}
         static getPrimaryKey(alias?) : any{}
@@ -67,11 +88,6 @@ export function Persistable<BC extends Constructable<{}>>(Base: BC) {
         persist (options) : any{}
         setDirty() : any{}
         refresh () : any{};
-
-        _id: string;
-
-        persistor : Persistor;
-
 
     };
 }
