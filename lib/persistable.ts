@@ -4,6 +4,7 @@ export class Persistor {
 
     static create(): Persistor {return undefined};
 
+    beginDefaultTransaction() : any {}
     beginTransaction(nodefault? : boolean) : any {}
     endTransaction(persistorTransaction?, logger?) : any {}
     begin (isdefault?) : any {}
