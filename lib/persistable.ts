@@ -14,7 +14,7 @@ export class Persistor {
     saveAll (txn?, logger?) : any {return undefined};
     setDB(db, type, alias) {};
     getPOJOFromQuery (template, query, options?, logger?) : any {}
-    commit (options) : any {};
+    commit (options?) : any {};
 
     getPersistorProps () : any {}
 
