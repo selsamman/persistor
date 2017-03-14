@@ -41,10 +41,10 @@ export function Persistable<BC extends Constructable<{}>>(Base: BC) {
     return class extends Base {
 
         // New names
-        static persistorDeleteByQuery(query, options) : any {}
-        static persistorFetchByQuery (query, options) : any {}
-        static persistorCountByQuery (query, options) : any {}
-        static persistorFetchById (id, options) : any {}
+        static persistorDeleteByQuery(query, options?) : any {}
+        static persistorFetchByQuery (query, options?) : any {}
+        static persistorCountByQuery (query, options?) : any {}
+        static persistorFetchById (id, options?) : any {}
         static persistorIsKnex() : any{}
         static persistorGetTableName(alias?) : any{}
         static persistorGetParentKey(prop, alias?) : any{}
