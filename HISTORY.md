@@ -1,3 +1,5 @@
+## 2.2.1
+* Include latest supetype
 ## 2.2.0
 * Support for TypeScript.
 ## 2.1.1
