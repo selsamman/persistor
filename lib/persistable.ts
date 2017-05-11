@@ -32,6 +32,12 @@ export class Persistor extends SupertypeSession {
     performInjections() {}
 }
 
+export function ContainsPersistable<BC extends Constructable<{}>>(Base: BC) {
+    return class extends Base {
+        amorphic : Persistor;
+    }
+}
+
 export function Persistable<BC extends Constructable<{}>>(Base: BC) {
 
     return class extends Base {
