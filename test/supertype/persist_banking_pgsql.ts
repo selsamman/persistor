@@ -113,7 +113,12 @@ var schemaTable = 'index_schema_history';
 
 describe('Banking from pgsql Example', function () {
 
-    var knex
+    var knex;
+    
+    it ('gets @supertypeClass({}) parameters passed through', function () {
+        expect(Account['__toClient__']).to.equal(false);
+        expect(Account['__toServer__']).to.equal(true);
+    });
 
     it ('opens the database Postgres', function () {
         knex =  persistor.connect({
