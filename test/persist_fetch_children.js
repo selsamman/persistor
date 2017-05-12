@@ -141,10 +141,10 @@ describe('persistor transaction checks', function () {
         return Promise.all([
             knex.schema.dropTableIfExists('tx_employee')
            .then(function () {
-                return knex.schema.dropTableIfExists('tx_department')
-            }).then(function () {
-                return knex.schema.dropTableIfExists('tx_role')
-            }),
+               return knex.schema.dropTableIfExists('tx_department')
+           }).then(function () {
+               return knex.schema.dropTableIfExists('tx_role')
+           }),
             knex.schema.dropTableIfExists(schemaTable)]);
     });
 
