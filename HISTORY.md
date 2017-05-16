@@ -1,5 +1,7 @@
+## 2.2.2
+* Include the latest SuperType.
 ## 2.2.1
-* Include latest supetype
+* Support for the most recent version of knex.
 ## 2.2.0
 * Support for TypeScript.
 ## 2.1.1
