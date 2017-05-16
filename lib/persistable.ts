@@ -30,6 +30,7 @@ export class Persistor extends SupertypeSession {
     synchronizeKnexTableFromTemplate (template : string) : any {};
     setSchema(schema : any) {};
     performInjections() {}
+    config: any
 }
 
 export function ContainsPersistable<BC extends Constructable<{}>>(Base: BC) {
