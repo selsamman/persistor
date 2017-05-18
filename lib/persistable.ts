@@ -31,6 +31,8 @@ export class Persistor extends SupertypeSession {
     setSchema(schema : any) {};
     performInjections() {}
     config: any
+    __transient__ : any
+    static createTransientObject(callback : any) {};
 }
 
 export function ContainsPersistable<BC extends Constructable<{}>>(Base: BC) {
