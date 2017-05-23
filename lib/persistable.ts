@@ -65,6 +65,7 @@ export function Persistable<BC extends Constructable<{}>>(Base: BC) {
         persistorIsStale () : any {}
 
         _id: string;
+        __version__: number;
         amorphic : Persistor;
 
         // Legacy
