@@ -32,6 +32,7 @@ export class Persistor extends SupertypeSession {
     performInjections() {}
     config: any
     __transient__ : any
+    objectMap: any
     static createTransientObject(callback : any) : any {};
 }
 
@@ -65,6 +66,7 @@ export function Persistable<BC extends Constructable<{}>>(Base: BC) {
         persistorIsStale () : any {}
 
         _id: string;
+        __version__: number;
         amorphic : Persistor;
 
         // Legacy
