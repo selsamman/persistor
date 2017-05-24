@@ -17,6 +17,9 @@ export class Persistor extends SupertypeSession {
 
     getPersistorProps () : any {}
 
+    getTableName () : any {}
+    getParentKey () : any {}
+
     connect (connect : any, schema : any) : any {}
     dropAllTables () : any {}
     syncAllTables () : any {}
