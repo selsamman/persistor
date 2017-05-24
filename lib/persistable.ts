@@ -17,9 +17,6 @@ export class Persistor extends SupertypeSession {
 
     getPersistorProps () : any {}
 
-    getTableName () : any {}
-    getParentKey () : any {}
-
     connect (connect : any, schema : any) : any {}
     dropAllTables () : any {}
     syncAllTables () : any {}
@@ -99,5 +96,7 @@ export function Persistable<BC extends Constructable<{}>>(Base: BC) {
         setDirty(txn?, onlyIfChanged?, noCascade?, logger?) : any{}
         refresh (logger?) : any{};
 
+        getTableName () : any {}
+        getParentKey () : any {}
     };
 }
