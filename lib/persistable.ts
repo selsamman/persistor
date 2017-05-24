@@ -32,6 +32,7 @@ export class Persistor extends SupertypeSession {
     performInjections() {}
     config: any
     __transient__ : any
+    objectMap: any
     static createTransientObject(callback : any) : any {};
 }
 
