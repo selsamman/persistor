@@ -204,6 +204,9 @@ describe('Banking from pgsql Example', function () {
         jointAccount.transferTo(100, samsAccount);      // Joint has 100, Sam has 150
         jointAccount.transferFrom(50, samsAccount);     // Joint has 150, Sam has 100
         jointAccount.debit(25);                         // Joint has 125
+
+        expect(samsAccount.amorphicGetPropertyValues('accountType')[0]).to.equal('B');
+        expect(samsAccount.amorphicGetPropertyDescriptions('accountType').B).to.equal('Business');
     });
 
     it('both accounts have the right balance', function () {

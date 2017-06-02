@@ -19,6 +19,9 @@ export class Account extends Persistable(Supertype) {
         this.setDirty();
     };
 
+    @property({values: ['B', 'P'], descriptions: {B: 'Business', P: 'Personal'}})
+    accountType: String = 'P';
+
     @property({type: Transaction, fetch: true})
     transactions: Array<Transaction> = [];
 
