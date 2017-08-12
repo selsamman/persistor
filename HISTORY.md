@@ -1,3 +1,5 @@
+## 2.2.4
+* Fixed Template level query methods to access session store provided
 ## 2.2.3
 * Fixed object injections to get the right objectTemplate
 ## 2.2.2
