@@ -1,7 +1,7 @@
 ## 2.2.5
-* Fix error that could lead to duplicate objects being created.
-## 2.2.4
 * Fixed fetch spec validation to consider the complete object hierarchy.
+## 2.2.4
+* Fix error that could lead to duplicate objects being created.
 ## 2.2.3
 * Fixed object injections to get the right objectTemplate
 ## 2.2.2
