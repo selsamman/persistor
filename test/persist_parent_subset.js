@@ -205,9 +205,6 @@ describe('persistor transaction checks', function () {
             expect(e.message).to.equal('Missing schema entry for ManagerMainTemplate');
         }
     });
-
-
-
 });
 
 /*eslint-enable no-unused-vars*/
