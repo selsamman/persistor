@@ -1,5 +1,13 @@
-## 2.3.2
+## 2.3.4
 * Change tracking cleanup.
+## 2.3.3
+* Modified changing tracking structure
+* change tracking flag has been moved to the template level.
+* Fixed date and object types comparison issues.
+* Any changes to the transaction object from the change tracking 
+*   callback will be reprocessed.
+## 2.3.2
+* New feature to allow private modules to append the schema entries.
 ## 2.3.1
 * Fixed error message to include the property name when changing the types.
 * Fixed to check for Persistor property when looking for the status of the object in cache.
