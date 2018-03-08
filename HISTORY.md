@@ -1,4 +1,4 @@
-## 2.3.11
+## 2.3.12
 * Including return to make promise calls to wait when adding comments.
 ## 2.3.11
 * Fixed sync tables issue, should not synchronize query templates when schema contains entry to the real templates.
