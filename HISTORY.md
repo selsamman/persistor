@@ -1,4 +1,6 @@
 ## 2.3.11
+* Including return to make promise calls to wait when adding comments.
+## 2.3.11
 * Fixed sync tables issue, should not synchronize query templates when schema contains entry to the real templates.
 ## 2.3.10
 * Modified order parameter parsing logic in persistorFetchByQuery.
