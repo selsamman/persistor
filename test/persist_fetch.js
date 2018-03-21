@@ -285,5 +285,4 @@ describe('persistor transaction checks', function () {
             });
         });
     });
-
 });
